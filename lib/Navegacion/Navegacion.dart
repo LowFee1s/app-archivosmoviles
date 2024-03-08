@@ -1,11 +1,11 @@
 
 import 'package:flutter/material.dart';
 
-import '../bienvenida_page.dart';
-import '../home_page.dart';
-import '../inicio_sesion.dart';
+import '../Pantallas/bienvenida_page.dart';
+import '../Pantallas/home_page.dart';
+import '../Pantallas/inicio_sesion.dart';
 
-class Navigate {
+class Navegacion {
 
   static Map<String, Widget Function(BuildContext)> routes = {
     '/': (context) => BienvenidaPage(),
