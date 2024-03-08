@@ -55,7 +55,7 @@ class BienvenidaPage extends StatelessWidget {
                     result == null
                         ? Navigator.pushNamed(context, Constantes.InicioSesionNavegacion)
                         : Navigator.pushReplacementNamed(
-                            context, Constantes.homeNavegacion);
+                            context, Constantes.HomeNavegacion);
                   },
                   child: Text(Constantes.textIniciar),
                   style: ButtonStyle(
@@ -73,7 +73,7 @@ class BienvenidaPage extends StatelessWidget {
                   onPressed: () {
                     result == null
                         ? Navigator.pushNamed(context, Constantes.InicioSesionNavegacion)
-                        : Navigator.pushReplacementNamed(context, Constantes.homeNavegacion);
+                        : Navigator.pushReplacementNamed(context, Constantes.HomeNavegacion);
                   },
                   child: Text(
                     Constantes.textInicioSesion,

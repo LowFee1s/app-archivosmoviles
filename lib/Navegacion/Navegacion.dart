@@ -1,4 +1,7 @@
 
+import 'dart:js';
+
+import 'package:appmovilesproyecto17/Pantallas/archivos_page.dart';
 import 'package:flutter/material.dart';
 
 import '../Pantallas/bienvenida_page.dart';
@@ -11,5 +14,6 @@ class Navegacion {
     '/': (context) => BienvenidaPage(),
     '/iniciar-sesion': (context) => InicioSesion(),
     '/home': (context) => HomePage(),
+    '/archivos': (context) => FilesPage(),
   };
 }

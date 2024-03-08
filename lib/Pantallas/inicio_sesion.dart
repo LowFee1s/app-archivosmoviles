@@ -114,7 +114,7 @@ Widget buildRowDivider({required Size size}) {
       Padding(
           padding: EdgeInsets.only(left: 8.0, right: 8.0),
           child: Text(
-            "Or",
+            "O",
             style: TextStyle(color: Constantes.kcDarkGreyColor),
           )),
       Expanded(child: Divider(color: Constantes.kcDarkGreyColor)),
@@ -146,7 +146,7 @@ class _GoogleSignInState extends State<GoogleSignIn> {
           FirebaseAuthUsuario firebasedato = new FirebaseAuthUsuario();
           try {
             await firebasedato.signInWithGoogle();
-            Navigator.pushNamedAndRemoveUntil(context, Constantes.homeNavegacion, (route) => false);
+            Navigator.pushNamedAndRemoveUntil(context, Constantes.HomeNavegacion, (route) => false);
           } catch(e){
             if(e is FirebaseAuthException){
               showMessage(e.message!);
