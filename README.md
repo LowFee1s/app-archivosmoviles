@@ -1,6 +1,7 @@
-# appmovilesproyecto17
+# appmovilesproyecto
 
-A new Flutter project.
+Este es un proyecto realizado en flutter, que se conecta por medio de las API de cada sistema de archivos 
+y si se logea en estos puede recibir y enviar entre todos estos archivos y documentos realizado.
 
 ## Getting Started
 
