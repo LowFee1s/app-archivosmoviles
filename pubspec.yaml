@@ -39,6 +39,10 @@ dependencies:
   cupertino_icons: ^1.0.6
   font_awesome_flutter: ^9.2.0
   firebase_auth: ^4.17.7
+  googleapis: ^7.0.0
+  googleapis_auth: ^1.1.0
+  dropbox_client: ^1.0.4
+  flutter_onedrive: ^1.6.1
   google_sign_in: ^5.0.3
 
 dev_dependencies:
