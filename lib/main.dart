@@ -3,6 +3,7 @@ import 'package:appmovilesproyecto17/inicio_sesion.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
+import 'Navegacion/Navegacion.dart';
 import 'bienvenida_page.dart';
 import 'constants.dart';
 import 'home_page.dart';
@@ -30,13 +31,4 @@ class MyApp extends StatelessWidget {
       ),
     );
   }
-}
-
-class Navigate {
-
-  static Map<String, Widget Function(BuildContext)> routes = {
-    '/': (context) => BienvenidaPage(),
-    '/iniciar-sesion': (context) => InicioSesion(),
-    '/home': (context) => HomePage(),
-  };
 }
