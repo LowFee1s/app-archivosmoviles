@@ -30,7 +30,7 @@ class FirebaseAuthUsuario {
 
   }
 
-  void signOutGoogle() async {
+  Future<void> signOutconGoogle() async {
     await googleSignIn.signOut();
     await firebaseAuth.signOut();
     print("Usuario cerrado de sesion!");
