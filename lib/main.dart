@@ -1,12 +1,12 @@
 import 'package:appmovilesproyecto17/firebase_options.dart';
-import 'package:appmovilesproyecto17/inicio_sesion.dart';
+import 'package:appmovilesproyecto17/Pantallas/inicio_sesion.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
 import 'Navegacion/Navegacion.dart';
-import 'bienvenida_page.dart';
-import 'constants.dart';
-import 'home_page.dart';
+import 'Pantallas/bienvenida_page.dart';
+import 'constantes.dart';
+import 'Pantallas/home_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,9 +23,9 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: Constants.title,
+      title: Constantes.titulo,
       initialRoute: '/',
-      routes: Navigate.routes,
+      routes: Navegacion.routes,
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
