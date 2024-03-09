@@ -1,5 +1,6 @@
 import 'package:appmovilesproyecto17/Firebase/firebase_options.dart';
 import 'package:appmovilesproyecto17/Pantallas/inicio_sesion.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
@@ -24,11 +25,29 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: Constantes.titulo,
-      initialRoute: '/',
-      routes: Navegacion.routes,
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
+      home: FutureBuilder(
+        future: _checarSiEstaLogin(),
+        builder: (BuildContext context, AsyncSnapshot<User?> snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return CircularProgressIndicator();
+          } else {
+            if (snapshot.hasError) {
+              return Text("Error: ${snapshot.error}");
+            } else {
+              return snapshot.data != null ? HomePage() : BienvenidaPage();
+            }
+          }
+        },
+      ),
+      routes: Navegacion.routes,
     );
   }
+
+  Future<User?> _checarSiEstaLogin() async {
+    return FirebaseAuth.instance.currentUser;
+  }
+
 }
