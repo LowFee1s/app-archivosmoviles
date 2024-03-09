@@ -3,7 +3,14 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 class FirebaseAuthUsuario {
 
-  final GoogleSignIn googleSignIn = GoogleSignIn();
+  final GoogleSignIn googleSignIn = GoogleSignIn(
+    scopes: [
+      'email',
+      'https://www.googleapis.com/auth/firebase',
+      'https://www.googleapis.com/auth/drive.file',
+      'https://www.googleapis.com/auth/drive'
+    ],
+  );
   final FirebaseAuth firebaseAuth = FirebaseAuth.instance;
 
   Future<String?> signInWithGoogle() async {
