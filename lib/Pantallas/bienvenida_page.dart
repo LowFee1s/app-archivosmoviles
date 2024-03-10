@@ -41,7 +41,8 @@ class BienvenidaPage extends StatelessWidget {
                             color: Constantes.kcBlackColor,
                             fontWeight: FontWeight.bold,
                             fontSize: 30.0)),
-                  ])),
+                  ])
+              ),
               SizedBox(height: size.height * 0.01),
               Text(
                 Constantes.textChicoRegistro,
