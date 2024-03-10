@@ -56,9 +56,8 @@ class CloudServicios {
   }
 
 
-  Future<List<String>> getGoogleDriveFiles() async {
+  Future<List<Map<String, Object?>>> getGoogleDriveFiles() async {
     GoogleSignInAccount? account = _googleSignIn.currentUser;
-    print(account);
     if (account == null) {
       account = await _googleSignIn.signInSilently();
     }
@@ -71,9 +70,9 @@ class CloudServicios {
 
     final driveApi = drive.DriveApi(authenticateClient);
 
-    final archivos = await driveApi.files.list();
+    final archivos = await driveApi.files.list($fields: 'files(name, createdTime)');
 
-    return archivos.files!.map((file) => file.name!).toList();
+    return archivos.files!.map((file) => {'nombre': file.name, 'fecha': file.createdTime ?? "----"}).toList();
   }
 
   Future<void> disconnectGoogleDrive() async {
