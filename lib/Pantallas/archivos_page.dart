@@ -533,7 +533,16 @@ class _FilesPageState extends State<FilesPage> {
                                       ),
                                       onPressed: () {
                                         // descargar
-
+                                        servicios.downloadFiletoGoogleDrive(id);
+                                        Navigator.of(context).pop();
+                                        showDialog(
+                                            context: context,
+                                            builder: (BuildContext context) {
+                                              return AlertDialog(
+                                                content: Text("Se descargo el archivo correctamente"),
+                                              );
+                                            }
+                                        );
                                       },
                                       child: Icon(FontAwesomeIcons.download, color: Colors.white, size: 21)
                                   ),
