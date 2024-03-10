@@ -10,7 +10,7 @@ class InicioSesion extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
-    OutlineInputBorder border = OutlineInputBorder(
+    OutlineInputBorder(
       borderSide: BorderSide(color: Constantes.kcBordeColor, width: 3.0)
     );
     return Scaffold(
