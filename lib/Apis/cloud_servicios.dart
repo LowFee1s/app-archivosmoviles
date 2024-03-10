@@ -1,5 +1,5 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:googleapis/cloudsearch/v1.dart';
+import 'dart:io' as io;
+
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:googleapis_auth/auth_io.dart';
 import 'package:flutter_onedrive/flutter_onedrive.dart';
@@ -14,6 +14,8 @@ class CloudServicios {
   );
 
   bool isConectadoGoogleDrive = false;
+  bool isConectadoOneDrive = false;
+  bool isConectadoDropbox = false;
 
   // Dropbox
   final dropboxToken = "your dropbox token";
@@ -70,9 +72,75 @@ class CloudServicios {
 
     final driveApi = drive.DriveApi(authenticateClient);
 
-    final archivos = await driveApi.files.list($fields: 'files(name, createdTime)');
+    final archivos = await driveApi.files.list($fields: 'files(name, id, thumbnailLink, size, mimeType, createdTime)');
 
-    return archivos.files!.map((file) => {'nombre': file.name, 'fecha': file.createdTime ?? "----"}).toList();
+    return archivos.files!.map((file) => {'nombre': file.name, 'id': file.id, 'screenarchivo': file.thumbnailLink, 'size': file.size ?? '----', 'extension': file.mimeType, 'fecha': file.createdTime ?? "----"}).toList();
+  }
+
+  Future<void> uploadFile(bool uploadtoGoogleDrive, bool uploadtoOneDrive, bool uploadToDropbox, io.File file17) async {
+    if (uploadtoGoogleDrive) {
+      print('good');
+      uploadFiletoGoogleDrive(file17.toString());
+    }
+    if (uploadtoOneDrive) {
+      print('good12');
+    }
+    if (uploadToDropbox) {
+      print('good17');
+    }
+  }
+
+  Future<void> uploadFiletoGoogleDrive(String file17) async {
+    GoogleSignInAccount? account = _googleSignIn.currentUser;
+      if (account == null) {
+        account = await _googleSignIn.signInSilently();
+      }
+      final authHeaders = await account!.authHeaders;
+      final authenticateClient = authenticatedClient(http.Client(), AccessCredentials(
+        AccessToken('Bearer', authHeaders['Authorization']!.split(' ').last, DateTime.now().add(Duration(hours: 1)).toUtc()),
+        null,
+        ['https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/drive']
+      ));
+
+      final driveApi = drive.DriveApi(authenticateClient);
+
+      var filetoUpload = drive.File();
+      filetoUpload.name = io.File(file17).path.split("/").last;
+      filetoUpload.parents = ["appDataFolder"];
+
+      var media = drive.Media(await io.File(file17).openRead(), await
+      io.File(file17).length());
+
+      try {
+        var result = await driveApi.files.create(filetoUpload, uploadMedia: media);
+        print("Archivo subido correctamente: ${result.id}");
+      } catch (error) {
+        print("Error de lo siguiente: ${error}");
+      }
+
+  }
+
+  Future<void> deleteGoogleDriveFile(String fileid17) async {
+    GoogleSignInAccount? account = _googleSignIn.currentUser;
+    if (account == null) {
+      account = await _googleSignIn.signInSilently();
+    }
+    final authHeaders = await account!.authHeaders;
+    final authenticateClient = authenticatedClient(http.Client(), AccessCredentials(
+      AccessToken('Bearer', authHeaders['Authorization']!.split(' ').last, DateTime.now().add(Duration(hours: 1)).toUtc()),
+      null,
+      ['https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/drive']
+    ));
+
+    final driveApi = drive.DriveApi(authenticateClient);
+
+    try {
+      await driveApi.files.delete(fileid17);
+      print("Archivo quitado correctamente 17");
+    } catch (error17) {
+      print("Error en lo siguiente: ${error17}");
+    }
+
   }
 
   Future<void> disconnectGoogleDrive() async {

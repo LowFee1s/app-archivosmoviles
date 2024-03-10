@@ -15,7 +15,7 @@ class Constantes {
   static const textIntro = "Envia y recibe archivos \n en una sola app ";
   static const textIntrosubira = "Selecciona tu archivo \n a subir, ";
   static const textIntroDesc1 = "facil \n ";
-  static const textIntroDescsubira = "Dando click aqui! \n ";
+  static const textIntroDescsubira = "dando click aqui! \n ";
   static const textIntroDesc2 = "para distintas apps!";
   static const textChicoRegistro = "Registrarte solo te toma 2 minutos!";
   static const textInicioSesion = "Inicia Sesion";
