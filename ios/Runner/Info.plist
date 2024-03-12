@@ -26,6 +26,22 @@
 	<true/>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
+	<key>LSApplicationQueriesSchemes</key>
+	    <array>
+	        <string>dbapi-8-emm</string>
+	        <string>dbapi-2</string>
+	    </array>
+	 <key>CFBundleURLTypes</key>
+        <array>
+            <dict>
+                <key>CFBundleURLSchemes</key>
+                <array>
+                    <string>db-2mo595er7yas01x</string>
+                </array>
+                <key>CFBundleURLName</key>
+                <string></string>
+            </dict>
+        </array>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
 	<key>UISupportedInterfaceOrientations</key>
