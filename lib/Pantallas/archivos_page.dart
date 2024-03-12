@@ -7,6 +7,8 @@ import 'package:intl/intl.dart';
 import '../Apis/cloud_servicios.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
+import '../Navegacion/Menubar.dart';
+
 class FilesPage extends StatefulWidget {
   FilesPage({Key? key}) : super(key: key);
 
@@ -52,14 +54,8 @@ class _FilesPageState extends State<FilesPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        leading: IconButton(
-            onPressed: () {
-              Navigator.pushReplacementNamed(
-                  context, Constantes.HomeNavegacion);
-            },
-            icon:
-                Icon(Icons.keyboard_backspace, color: Colors.deepPurpleAccent)),
         title: Text('Archivos General'),
         actions: [
           IconButton(
@@ -86,7 +82,7 @@ class _FilesPageState extends State<FilesPage> {
                 showBottomBorder: true,
                 showCheckboxColumn: false,
                 columnSpacing: 17,
-                dataRowHeight: 60,
+                dataRowHeight: 80,
                 columns: const <DataColumn>[
                   DataColumn(
                     label: Text('Servicio'),
@@ -143,6 +139,7 @@ class _FilesPageState extends State<FilesPage> {
           ),
         ],
       ),
+      bottomNavigationBar: Menubar(index: 0, colors: [Colors.transparent, Colors.black, Colors.white]),
     );
   }
 

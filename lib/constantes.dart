@@ -31,6 +31,7 @@ class Constantes {
   static const InicioSesionNavegacion = '/iniciar-sesion';
   static const ArchivosNavegacion = '/archivos';
   static const HomeNavegacion = '/home';
+  static const PerfilNavegacion = '/configuracion';
 
   static const estadoBarraColor = SystemUiOverlayStyle(
       statusBarColor: Constantes.kcPrimaryColor,

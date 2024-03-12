@@ -1,4 +1,5 @@
 import 'package:appmovilesproyecto17/Firebase/firebase_authuser.dart';
+import 'package:appmovilesproyecto17/Navegacion/Menubar.dart';
 import 'package:appmovilesproyecto17/constantes.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -30,11 +31,13 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    cloudServicios.initDropbox();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.deepPurple,
       appBar: AppBar(
         actions: <Widget>[
           IconButton(
@@ -49,7 +52,6 @@ class _HomePageState extends State<HomePage> {
             },
           )
         ],
-        systemOverlayStyle: SystemUiOverlayStyle(statusBarColor: Colors.blue),
         title: Text("Inicio"),
       ),
       body: Center(
@@ -72,26 +74,37 @@ class _HomePageState extends State<HomePage> {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 ElevatedButton(
-                  onPressed: () {
-                    // Implementar conexión/desconexión con OneDrive
+                  onPressed: () async {
+                    // Implementar conexión/desconexión con Dropbox
+                      if (cloudServicios.isConectadoOneDrive) {
+                        await cloudServicios.disconnectOneDrive();
+                      } else {
+                        await cloudServicios.connectOneDrive(context);
+                      }
                   },
-                  child: Text('OneDrive'),
+                  child: Text(cloudServicios.isConectadoOneDrive ? 'Desconectar OD' : 'OneDrive'),
                 ),
                 ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     // Implementar conexión/desconexión con Dropbox
+                      if (cloudServicios.isConectadoDropbox) {
+                        await cloudServicios.disconnectDropbox();
+                      } else {
+                        await cloudServicios.connectDropbox();
+                      }
                   },
-                  child: Text('Dropbox'),
+                  child: Text(cloudServicios.isConectadoDropbox ? 'Dropbox' : 'Desconectar db'),
                 ),
                 ElevatedButton(
                   onPressed: user!.providerData[0].providerId == "google.com" || cloudServicios.isConectadoGoogleDrive ? null
-                  : () async {
-                      if (cloudServicios.isConectadoGoogleDrive) {
-                        await cloudServicios.disconnectGoogleDrive();
-                      } else {
-                        await cloudServicios.connectGoogleDrive();
-                      }
-                  } ,
+                   : () async {
+                      // Implementar conexión/desconexión con Dropbox
+                        if (cloudServicios.isConectadoGoogleDrive) {
+                          await cloudServicios.disconnectGoogleDrive();
+                        } else {
+                          await cloudServicios.connectGoogleDrive();
+                        }
+                    },
                   child: Text('Google Drive'),
                 ),
               ],
@@ -100,6 +113,7 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
+        bottomNavigationBar: Menubar(index: 1, colors: [Colors.deepPurple, Colors.black, Colors.white]),
     );
   }
 }

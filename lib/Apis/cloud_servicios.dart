@@ -1,5 +1,7 @@
 import 'dart:io' as io;
 
+import 'package:dropbox_client/dropbox_client.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:googleapis_auth/auth_io.dart';
 import 'package:flutter_onedrive/flutter_onedrive.dart';
@@ -10,17 +12,13 @@ import 'package:http/http.dart' as http;
 class CloudServicios {
   // OneDrive
   final onedrive = OneDrive(
-    redirectURL: "your redirectURL",
-    clientID: "your clientID",
+    clientID: "ccbefcba-c090-4c47-a300-98bd8115f1e6",
+    redirectURL: "com.movilesproyecto.appmovilesproyecto17://homepage",
   );
 
   bool isConectadoGoogleDrive = false;
   bool isConectadoOneDrive = false;
   bool isConectadoDropbox = false;
-
-  // Dropbox
-  final dropboxToken = "your dropbox token";
-  http.Client? dropboxClient;
 
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: [
@@ -29,20 +27,46 @@ class CloudServicios {
     ],
   );
 
-  Future<void> connectOneDrive() async {
-    // Implementar conexión con OneDrive
+  Future<void> connectOneDrive(BuildContext context) async {
+
   }
 
   Future<void> disconnectOneDrive() async {
-    // Implementar desconexión con OneDrive
+    await onedrive.disconnect();
+    isConectadoOneDrive = false;
   }
 
-  Future<void> connectDropbox() async {
-    // Implementar conexión con Dropbox
+
+  // conexion con dropbox login y logout con dropbox_client
+
+  Future initDropbox() async {
+    try {
+      await Dropbox.init("appmovilesrealizado17", "2mo595er7yas01x", "ofyy6b5bjve5lfx");
+      print("Inicio correcto de Dropbox");
+    } catch (error) {
+      print(error);
+    }
   }
+
+  //conectar con la cuenta de dropbox
+  Future<void> connectDropbox() async {
+    try {
+      var dropbox = await Dropbox.authorize();
+
+      var user = await Dropbox.getAccountName();
+      print("Usuario de Dropbox: $user");
+
+    } catch (error) {
+      print(error);
+    }
+  }
+
 
   Future<void> disconnectDropbox() async {
     // Implementar desconexión con Dropbox
+    print("dropbox");
+    await Dropbox.unlink();
+    isConectadoDropbox = false;
   }
 
   Future<void> connectGoogleDrive() async {
@@ -130,6 +154,7 @@ class CloudServicios {
 
   }
 
+  //checar
   Future<void> downloadFiletoGoogleDrive(String fileid17) async {
     GoogleSignInAccount? account = _googleSignIn.currentUser;
       if (account == null) {
@@ -144,11 +169,17 @@ class CloudServicios {
 
       final driveApi = drive.DriveApi(authenticateClient);
 
+      final fileMetaDato = await driveApi.files.get(fileid17) as drive.File;
+
+      String fileName17 = fileMetaDato.name!;
+
+      String extension = fileMetaDato.name!.split('/').last;
+
       drive.Media file = await driveApi.files.get(fileid17, downloadOptions: drive.DownloadOptions.fullMedia) as drive.Media;
 
       final carpetaarchivorealizado17 = await getExternalStorageDirectory();
 
-      final saveFile = io.File('${carpetaarchivorealizado17!.path}/$fileid17');
+      final saveFile = io.File('${carpetaarchivorealizado17!.path}/$fileName17.$extension');
 
       List<int> dataStore = [];
 
@@ -162,8 +193,6 @@ class CloudServicios {
       });
 
   }
-
-
 
   Future<void> deleteGoogleDriveFile(String fileid17) async {
     GoogleSignInAccount? account = _googleSignIn.currentUser;

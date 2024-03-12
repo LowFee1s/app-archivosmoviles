@@ -5,8 +5,8 @@ class FirebaseAuthUsuario {
 
   final GoogleSignIn googleSignIn = GoogleSignIn(
     scopes: [
-      'email',
-      'https://www.googleapis.com/auth/firebase',
+     // 'email',
+     // 'https://www.googleapis.com/auth/firebase',
       'https://www.googleapis.com/auth/drive.file',
       'https://www.googleapis.com/auth/drive'
     ],
