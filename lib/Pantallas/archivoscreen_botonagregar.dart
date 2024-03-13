@@ -213,10 +213,10 @@ class _AgregarButtonState extends State<AgregarButton> {
                                           });
                                         } : null
                                       ),
-                                      CheckboxListTile(
+                                    /*  CheckboxListTile(
                                         title: Row(
                                           children: [
-                                            Text('One Drive'),
+                                            Text('All Cloud'),
                                             SizedBox(width: 17),
                                             Icon(FontAwesomeIcons.cloud),
                                           ],
@@ -227,13 +227,13 @@ class _AgregarButtonState extends State<AgregarButton> {
                                             uploadtoOneDrive = value!;
                                           });
                                         } : null
-                                      ),
+                                      ), */
                                       CheckboxListTile(
                                         title: Row(
                                           children: [
-                                            Text('Dropbox'),
+                                            Text('One Drive'),
                                             SizedBox(width: 17),
-                                            Icon(FontAwesomeIcons.dropbox),
+                                            Icon(FontAwesomeIcons.cloud),
                                           ],
                                         ),
                                         value: uploadToDropbox,
@@ -279,6 +279,7 @@ class _AgregarButtonState extends State<AgregarButton> {
                                                   // Si la carga fue exitosa, cierra el diálogo
                                                   Navigator.of(context).pop();
                                                   Navigator.of(context).pop();
+
                                                   return Container();
                                                 }
                                               }

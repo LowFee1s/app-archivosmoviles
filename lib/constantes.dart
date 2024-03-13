@@ -21,6 +21,7 @@ class Constantes {
   static const textInicioSesion = "Inicia Sesion";
   static const textIniciar = "Comenzar";
   static const textInicioSesionTitulo = "Bienvenido de vuelta!";
+  static const textInicioSesionTitulo1 = "Bienvenido de vuelta!,";
   static const textChicoInicioSesion = "Te hemos hechado de menos";
   static const textInicioSesionGoogle = "Iniciar Sesion con Google";
   static const textCuenta = "No tienes una cuenta?,  ";

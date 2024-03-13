@@ -139,7 +139,7 @@ class _FilesPageState extends State<FilesPage> {
           ),
         ],
       ),
-      bottomNavigationBar: Menubar(index: 0, colors: [Colors.transparent, Colors.black, Colors.white]),
+      bottomNavigationBar: Menubar(index: 0, colors: [Colors.transparent, Colors.black, Colors.deepPurpleAccent]),
     );
   }
 
@@ -570,6 +570,14 @@ class _FilesPageState extends State<FilesPage> {
                                                         servicios.deleteGoogleDriveFile(id);
                                                         Navigator.of(context).pop();
                                                         Navigator.of(context).pop();
+                                                        showDialog(
+                                                            context: context,
+                                                            builder: (BuildContext context) {
+                                                              return AlertDialog(
+                                                                content: Text("Se Borro el archivo correctamente"),
+                                                              );
+                                                            }
+                                                        );
                                                       },
                                                       child: Text('Confirmar'))
                                                 ],
