@@ -188,6 +188,7 @@ class CloudServicios {
       }, onDone: () {
         saveFile.writeAsBytes(dataStore);
         print("Archivo descargado correctamente: ${saveFile.path}");
+        OpenFile.open(saveFile.path);
       }, onError: (error) {
         print("Archivo subido correctamente: $error");
       });
