@@ -6,8 +6,9 @@ import '../constantes.dart';
 class Menubar extends StatelessWidget {
   final int index;
   final List<Color> colors;
+  final Function(int) onTap; // Add this line
 
-  Menubar({required this.index, required this.colors});
+  Menubar({required this.index, required this.colors, required this.onTap}); // Modify this line
 
   @override
   Widget build(BuildContext context) {
@@ -21,16 +22,7 @@ class Menubar extends StatelessWidget {
         Icon(Icons.home, size: 30, color: colors[2]),
         Icon(Icons.settings, size: 30, color: colors[2]),
       ],
-      onTap: (index) {
-        //Handle button tap
-        if (index == 0) {
-          Navigator.pushReplacementNamed(context, Constantes.ArchivosNavegacion);
-        } else if (index == 1) {
-          Navigator.pushReplacementNamed(context, Constantes.HomeNavegacion);
-        } else if (index == 2) {
-          Navigator.pushReplacementNamed(context, Constantes.PerfilNavegacion);
-        }
-      },
+      onTap: onTap, // Modify this line
     );
   }
 }
