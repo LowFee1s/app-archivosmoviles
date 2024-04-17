@@ -1,5 +1,7 @@
 import 'package:appmovilesproyecto17/Firebase/firebase_authuser.dart';
+import 'package:appmovilesproyecto17/main.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter/material.dart';
 
@@ -9,6 +11,12 @@ class InicioSesion extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+
     Size size = MediaQuery.of(context).size;
     OutlineInputBorder(
       borderSide: BorderSide(color: Constantes.kcBordeColor, width: 3.0)
@@ -146,7 +154,7 @@ class _GoogleSignInState extends State<GoogleSignIn> {
           FirebaseAuthUsuario firebasedato = new FirebaseAuthUsuario();
           try {
             await firebasedato.signInWithGoogle();
-            Navigator.pushNamedAndRemoveUntil(context, Constantes.HomeNavegacion, (route) => false);
+            Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => MainPage()), (route) => false);
           } catch(e){
             if(e is FirebaseAuthException){
               showMessage(e.message!);

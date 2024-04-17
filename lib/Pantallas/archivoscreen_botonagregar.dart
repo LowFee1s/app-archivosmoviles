@@ -1,14 +1,18 @@
 import 'dart:io';
 
+import 'package:another_flushbar/flushbar.dart';
 import 'package:appmovilesproyecto17/Apis/cloud_servicios.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/intl.dart';
 import 'dart:math';
 import 'package:path/path.dart' as path;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:provider/provider.dart';
 
+import '../Navegacion/MarkerProvider.dart';
 import '../constantes.dart';
 
 class AgregarButton extends StatefulWidget {
@@ -72,6 +76,18 @@ class _AgregarButtonState extends State<AgregarButton> {
       case '.pptx':
         return Icon(FontAwesomeIcons.filePowerpoint,
             color: Colors.orange, size: 49);
+      case '.zip':
+      case '.rar':
+        return Icon(FontAwesomeIcons.fileArchive, color: Colors.orange, size: 49);
+      case '.txt':
+        return Icon(FontAwesomeIcons.fileAlt, color: Colors.grey, size: 49);
+      case '.mp3':
+      case '.wav':
+        return Icon(FontAwesomeIcons.fileAudio, color: Colors.grey, size: 49);
+      case '.mp4':
+      case '.avi':
+      case '.mov':
+        return Icon(FontAwesomeIcons.fileVideo, color: Colors.grey, size: 49);
       case '.jpg':
       case '.jpeg':
       case '.png':
@@ -83,6 +99,16 @@ class _AgregarButtonState extends State<AgregarButton> {
 
   @override
   Widget build(BuildContext context) {
+
+    servicios.isConectadoOneDrive = Provider.of<MarkerProvider>(context, listen: false).tokenOneDrive;
+
+    double screenwidth = MediaQuery.of(context).size.width;
+
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+
     return Container(
       width: MediaQuery.of(context).size.width,
       decoration: BoxDecoration(
@@ -233,13 +259,13 @@ class _AgregarButtonState extends State<AgregarButton> {
                                           children: [
                                             Text('One Drive'),
                                             SizedBox(width: 17),
-                                            Icon(FontAwesomeIcons.cloud),
+                                            Icon(FontAwesomeIcons.microsoft),
                                           ],
                                         ),
-                                        value: uploadToDropbox,
-                                        onChanged: servicios.isConectadoDropbox ? (bool? value) {
+                                        value: uploadtoOneDrive,
+                                        onChanged: servicios.isConectadoOneDrive ? (bool? value) {
                                           setState(() {
-                                            uploadToDropbox = value!;
+                                            uploadtoOneDrive = value!;
                                           });
                                         } : null
                                       ),
@@ -278,8 +304,7 @@ class _AgregarButtonState extends State<AgregarButton> {
                                                 } else {
                                                   // Si la carga fue exitosa, cierra el diálogo
                                                   Navigator.of(context).pop();
-                                                  Navigator.of(context).pop();
-
+                                                  Navigator.of(context).pop(true);
                                                   return Container();
                                                 }
                                               }
@@ -345,7 +370,7 @@ class _AgregarButtonState extends State<AgregarButton> {
                                         child: Icon(Icons.upload,
                                             size: 110,
                                             color: Colors.deepPurpleAccent)),
-                                    SizedBox(height: 21),
+                                    SizedBox(height: 17),
                                     RichText(
                                         textAlign: TextAlign.center,
                                         text: TextSpan(children: <TextSpan>[
@@ -354,7 +379,7 @@ class _AgregarButtonState extends State<AgregarButton> {
                                               style: TextStyle(
                                                 color: Constantes.kcBlackColor,
                                                 fontWeight: FontWeight.bold,
-                                                fontSize: 30.0,
+                                                fontSize: screenwidth * 0.07,
                                               )),
                                           TextSpan(
                                               text: Constantes
@@ -363,8 +388,68 @@ class _AgregarButtonState extends State<AgregarButton> {
                                                   color: Constantes
                                                       .kcDarkBlueColor,
                                                   fontWeight: FontWeight.bold,
-                                                  fontSize: 30.0)),
+                                                  fontSize: screenwidth * 0.07,)),
                                         ])),
+                                    Column(
+                                      children: [
+                                        Text("Tipos de archivos permitidos:",
+                                            style: TextStyle(
+                                                color: Colors.grey,
+                                                fontWeight: FontWeight.w800,
+                                                fontSize: screenwidth * 0.04,),
+                                          ),
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                          children: [
+                                            Container(
+                                              height: 21,
+                                              width: 45,
+                                              decoration: BoxDecoration(
+                                                  color: Colors.blue,
+                                                  borderRadius:
+                                                      BorderRadius.circular(10)),
+                                              child: Center(child: Text(".docx", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800))),
+                                            ),
+                                            Container(
+                                                height: 21,
+                                                width: 45,
+                                                decoration: BoxDecoration(
+                                                    color: Colors.green,
+                                                    borderRadius:
+                                                        BorderRadius.circular(10)),
+                                                child: Center(child: Text(".xlsx", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800))),
+                                              ),
+                                            Container(
+                                                height: 21,
+                                                width: 45,
+                                                decoration: BoxDecoration(
+                                                    color: Colors.orange,
+                                                    borderRadius:
+                                                        BorderRadius.circular(10)),
+                                                child: Center(child: Text(".pptx", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800))),
+                                              ),
+                                            Container(
+                                                height: 21,
+                                                width: 45,
+                                                decoration: BoxDecoration(
+                                                    color: Colors.red,
+                                                    borderRadius:
+                                                        BorderRadius.circular(10)),
+                                                child: Center(child: Text(".pdf", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800))),
+                                              ),
+                                            Container(
+                                                height: 21,
+                                                width: 45,
+                                                decoration: BoxDecoration(
+                                                    color: Colors.grey,
+                                                    borderRadius:
+                                                        BorderRadius.circular(10)),
+                                                child: Center(child: Text("otro", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800))),
+                                              ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
                                   ],
                                 ),
                               ),

@@ -7,6 +7,12 @@ import '../constantes.dart';
 class BienvenidaPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+
     Size size = MediaQuery.of(context).size;
     User? result = FirebaseAuth.instance.currentUser;
     return Scaffold(
