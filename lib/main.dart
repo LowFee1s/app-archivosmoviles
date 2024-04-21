@@ -1,12 +1,16 @@
 import 'package:appmovilesproyecto17/Apis/cloud_servicios.dart';
+import 'package:appmovilesproyecto17/Firebase/firebase_authuser.dart';
 import 'package:appmovilesproyecto17/Firebase/firebase_options.dart';
 import 'package:appmovilesproyecto17/Pantallas/archivos_page.dart';
+import 'package:appmovilesproyecto17/Pantallas/detallescuenta.dart';
+import 'package:appmovilesproyecto17/Pantallas/inicio_sesion.dart';
 import 'package:appmovilesproyecto17/Pantallas/perfil_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:provider/provider.dart';
 
 import 'Navegacion/MarkerProvider.dart';
@@ -29,9 +33,9 @@ void main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-
   @override
   Widget build(BuildContext context) {
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: Constantes.titulo,
@@ -51,39 +55,92 @@ class MyApp extends StatelessWidget {
                 return BienvenidaPage();
               } else {
                 return FutureBuilder(
-                    future: _checarSiestaIniciadoSesion(),
-                    builder: (BuildContext context,
-                        AsyncSnapshot<Map<String, dynamic>> snapshot) {
-                          if (snapshot.connectionState == ConnectionState.waiting) {
-                            return Container(color: Colors.white, child: Center(child: CircularProgressIndicator()));
-                          } else {
-                            if (snapshot.hasError) {
-                              return Text("Error: ${snapshot.error}");
+                future: _checarsirellenolosdatos(),
+                builder: (BuildContext context,
+                    AsyncSnapshot<bool> snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Container(color: Colors.white, child: Center(child: CircularProgressIndicator()));
+                      } else {
+                        if (snapshot.hasError) {
+                          return Text("Error: ${snapshot.error}");
+                        } else {
+                            if (snapshot.data == true) {
+                              return FutureBuilder(
+                                  future: _checarSiestaconectadoIniciadoSesion(),
+                                  builder: (BuildContext context,
+                                      AsyncSnapshot<Map<String, dynamic>> snapshot) {
+                                    if (snapshot.connectionState == ConnectionState.waiting) {
+                                      return Container(color: Colors.white, child: Center(child: CircularProgressIndicator()));
+                                    } else {
+                                      if (snapshot.hasError) {
+                                        return Text("Error: ${snapshot.error}");
+                                      } else {
+
+                                        CloudServicios cloudServicios = CloudServicios();
+                                        User? user = FirebaseAuth.instance.currentUser;
+                                        FirebaseAuthUsuario firebaseAuthUsuario = FirebaseAuthUsuario();
+                                        /*
+                                        FirebaseAuth.instance.authStateChanges().listen((User? user) {
+                                          if (user == null) {
+                                            print("El usuario ha cerrado sesion. ");
+                                          } else {
+                                            user.getIdToken(true).then((String? token) async {
+                                              print("Este es el token nuevo: $token");
+                                              if (user.providerData[0].providerId == "microsoft.com") {
+                                                await FirebaseFirestore.instance.collection("users").doc(user.uid).update({
+                                                  "useronedrivetoken": token,
+                                                });
+                                              }
+
+                                              if (user.providerData[0].providerId == "google.com") {
+                                                await FirebaseFirestore.instance.collection("users").doc(user.uid).update({
+                                                  "usertokenGoogleDrive": token,
+                                                });
+                                              }
+                                            }).catchError((error) {
+                                              print("Ocurrio algo inesperado: $error");
+                                            });
+                                          }
+                                        });
+
+                                         */
+
+                                        if (snapshot.data != null) {
+                                          if (snapshot.data!["usertokenGoogleDrive"] == "") {
+                                            Provider.of<MarkerProvider>(context, listen: false).setisConnectedGoogleDrive = false;
+                                            cloudServicios.isConectadoGoogleDrive = false;
+                                          } else {
+                                            Provider.of<MarkerProvider>(context, listen: false).setisConnectedGoogleDrive = true;
+                                            Provider.of<MarkerProvider>(context, listen: false).setusertokenGoogleDrive = snapshot.data!["usertokenGoogleDrive"];
+                                            cloudServicios.isConectadoGoogleDrive = true;
+                                          }
+                                          if (user!.providerData[0].providerId == "microsoft.com") {
+                                            return InicioSesion();
+                                          }
+                                        }
+
+                                        return MainPage();
+                                      }
+                                    }
+                                  }
+                              );
                             } else {
-                              if (snapshot.data == null ||
-                                  snapshot.data!["oneDriveToken"] == "") {
-                                Provider.of<MarkerProvider>(context, listen: false).tokenOneDrive = false;
-                                Provider.of<MarkerProvider>(context, listen: false).tokenonedrivestring = "";
-                                return MainPage();
-                              } else {
-                                Provider.of<MarkerProvider>(context, listen: false).tokenOneDrive = true;
-                                Provider.of<MarkerProvider>(context, listen: false).tokenonedrivestring = snapshot.data!["oneDriveToken"];
-                                return MainPage();
-                              }
+                              return Detallescuenta();
                             }
+                          }
                       }
                     }
-                );
+                  );
+                }
               }
             }
           }
-        },
       ),
       routes: Navegacion.routes,
     );
   }
 
-  Future<Map<String, dynamic>> _checarSiestaIniciadoSesion() async {
+  Future<Map<String, dynamic>> _checarSiestaconectadoIniciadoSesion() async {
     if (FirebaseAuth.instance.currentUser != null) {
       DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance.collection("users").doc(FirebaseAuth.instance.currentUser!.uid).get();
       if (!documentSnapshot.exists) {
@@ -96,8 +153,32 @@ class MyApp extends StatelessWidget {
     }
   }
 
+  Future<Map<String, dynamic>> _checarSiestaIniciadoSesionMicrosoft() async {
+    if (FirebaseAuth.instance.currentUser != null) {
+      DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance.collection("users").doc(FirebaseAuth.instance.currentUser!.uid).get();
+      if (!documentSnapshot.exists) {
+        return {"": ""};
+      } else {
+        return documentSnapshot.data() as Map<String, dynamic>;
+      }
+    } else {
+      return {"": ""};
+    }
+  }
+
+
+
   Future<User?> _checarSiEstaLogin() async {
     return FirebaseAuth.instance.currentUser;
+  }
+
+  Future<bool> _checarsirellenolosdatos() async {
+
+    final user = await FirebaseAuth.instance.currentUser;
+    if (user!.providerData[0].providerId == "microsoft.com") {
+      return user != null && user.photoURL != "" && user.photoURL != null;
+    }
+    return user != null && user.displayName != null && user.photoURL != null;
   }
 }
 
