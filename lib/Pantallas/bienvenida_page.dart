@@ -59,7 +59,7 @@ class BienvenidaPage extends StatelessWidget {
                 child: OutlinedButton(
                   onPressed: () {
                     result == null
-                        ? Navigator.pushNamed(context, Constantes.InicioSesionNavegacion)
+                        ? Navigator.pushNamed(context, Constantes.RegistroNavegacion)
                         : Navigator.pushReplacementNamed(
                             context, Constantes.HomeNavegacion);
                   },

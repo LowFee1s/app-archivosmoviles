@@ -100,6 +100,14 @@ class _AgregarButtonHomeState extends State<AgregarButtonHome> {
   @override
   Widget build(BuildContext context) {
     servicios.isConectadoOneDrive = Provider.of<MarkerProvider>(context, listen: false).tokenOneDrive;
+    var isConnectedGoogleDrive = Provider.of<MarkerProvider>(context, listen: false).isConnectedGoogleDrive;
+    var usertokenGoogleDrive = Provider.of<MarkerProvider>(context, listen: false).usertokenGoogleDrive;
+    var usertokenOneDrive = Provider.of<MarkerProvider>(context, listen: false).usertokenOneDrive;
+    var isConnectedGoogleDriveFirebase = Provider.of<MarkerProvider>(context, listen: false).isConnectedGoogleDriveFirebase;
+    var isConnectedMicrosoftFirebase = Provider.of<MarkerProvider>(context, listen: false).isConnectedMicrosoftFirebase;
+    var isConnectedMicrosoft = Provider.of<MarkerProvider>(context, listen: false).isConnectedMicrosoft;
+
+
     double screenwidth = MediaQuery.of(context).size.width;
 
     SystemChrome.setPreferredOrientations([
@@ -225,33 +233,33 @@ class _AgregarButtonHomeState extends State<AgregarButtonHome> {
                                 CheckboxListTile(
                                     title: Row(
                                       children: [
+                                        Text('All Cloud'),
+                                        SizedBox(width: 17),
+                                        Icon(FontAwesomeIcons.cloud),
+                                      ],
+                                    ),
+                                    value: uploadToDropbox,
+                                    onChanged: (bool? value) {
+                                      setState(() {
+                                        uploadToDropbox = value!;
+                                      });
+                                    }
+                                ),
+                                CheckboxListTile(
+                                    title: Row(
+                                      children: [
                                         Text('Google Drive'),
                                         SizedBox(width: 17),
                                         Icon(FontAwesomeIcons.googleDrive),
                                       ],
                                     ),
                                     value: uploadtoGoogleDrive,
-                                    onChanged: servicios.isConectadoGoogleDrive ? (bool? value) {
+                                    onChanged: isConnectedGoogleDriveFirebase || isConnectedGoogleDrive ? (bool? value) {
                                       setState(() {
                                         uploadtoGoogleDrive = value!;
                                       });
                                     } : null
                                 ),
-                            /*    CheckboxListTile(
-                                    title: Row(
-                                      children: [
-                                        Text('All Cloud'),
-                                        SizedBox(width: 17),
-                                        Icon(FontAwesomeIcons.cloud),
-                                      ],
-                                    ),
-                                    value: uploadtoOneDrive,
-                                    onChanged: servicios.isConectadoOneDrive ? (bool? value) {
-                                      setState(() {
-                                        uploadtoOneDrive = value!;
-                                      });
-                                    } : null
-                                ), */
                                 CheckboxListTile(
                                     title: Row(
                                       children: [
@@ -261,7 +269,7 @@ class _AgregarButtonHomeState extends State<AgregarButtonHome> {
                                       ],
                                     ),
                                     value: uploadtoOneDrive,
-                                    onChanged: servicios.isConectadoOneDrive ? (bool? value) {
+                                    onChanged: isConnectedMicrosoftFirebase || isConnectedMicrosoft ? (bool? value) {
                                       setState(() {
                                         uploadtoOneDrive = value!;
                                       });
@@ -282,17 +290,20 @@ class _AgregarButtonHomeState extends State<AgregarButtonHome> {
                                 barrierDismissible: false,
                                 builder: (BuildContext context) {
                                   return FutureBuilder(
-                                    future: servicios.uploadFile(uploadtoGoogleDrive, uploadtoOneDrive, uploadToDropbox, _selectedFile!),
+                                    future: servicios.uploadFile(usertokenGoogleDrive!, usertokenOneDrive!, uploadtoGoogleDrive, uploadtoOneDrive, uploadToDropbox, _selectedFile!),
                                     builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
                                       if (snapshot.connectionState == ConnectionState.waiting) {
-                                        return AlertDialog(
-                                          content: Row(
-                                            mainAxisAlignment: MainAxisAlignment.center,
-                                            children: <Widget>[
-                                              CircularProgressIndicator(),
-                                              SizedBox(width: 21),
-                                              Text("Subiendo archivo....", style: TextStyle(fontWeight: FontWeight.w800)),
-                                            ],
+                                        return WillPopScope(
+                                          onWillPop: () async => false,
+                                          child: AlertDialog(
+                                            content: Row(
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: <Widget>[
+                                                CircularProgressIndicator(),
+                                                SizedBox(width: 21),
+                                                Text("Subiendo archivo....", style: TextStyle(fontWeight: FontWeight.w800)),
+                                              ],
+                                            ),
                                           ),
                                         );
                                       } else {

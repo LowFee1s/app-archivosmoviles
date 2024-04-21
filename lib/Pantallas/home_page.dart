@@ -45,15 +45,19 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    cloudServicios.initDropbox();
-    cloudServicios.isConectadoGoogleDrive = user!.providerData[0].providerId == "google.com";
     cloudServicios.isConectadoOneDrive;
+
   }
 
   @override
   Widget build(BuildContext context) {
 
+
     var isConectadoOneDrive = Provider.of<MarkerProvider>(context).tokenOneDrive;
+    var isConnectedGoogleDriveFirebase = Provider.of<MarkerProvider>(context).setisConnectedGoogleDriveFirebase = user!.providerData[0].providerId == "google.com";
+    var isConnectedMicrosoftFirebase = Provider.of<MarkerProvider>(context).setisConnectedMicrosoftFirebase = user!.providerData[0].providerId == "microsoft.com";
+    var isConnectedGoogleDrive = Provider.of<MarkerProvider>(context).isConnectedGoogleDrive;
+    var isConnectedMicrosoft = Provider.of<MarkerProvider>(context).isConnectedMicrosoft;
     double screenWidth = MediaQuery.of(context).size.width;
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
@@ -217,11 +221,11 @@ class _HomePageState extends State<HomePage> {
                   SizedBox(height: MediaQuery.of(context).size.height * 0.04),
                   // tabla de las autenticaciones conectadas
                   Align(
-                    alignment: Alignment.centerRight,
+                    alignment: Alignment.centerLeft,
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(5, 0, 17, 0),
+                      padding: const EdgeInsets.fromLTRB(7, 0, 17, 0),
                       child: RichText(
-                          textAlign: TextAlign.end,
+                          textAlign: TextAlign.start,
                           text: TextSpan(children: <TextSpan>[
                             TextSpan(
                                 text: "Conexiones",
@@ -254,6 +258,34 @@ class _HomePageState extends State<HomePage> {
                               children: [
                                 Row(
                                   children: [
+                                    Text("All Cloud (Local)",
+                                        style: TextStyle(
+                                            color: Constantes.kcDarkGreyColor,
+                                            fontWeight: FontWeight.w500,
+                                            fontSize: screenWidth * 0.04)
+                                    ),
+                                    SizedBox(width: 15),
+                                    Icon(FontAwesomeIcons.cloud, color: Colors.grey),
+                                  ],
+                                ),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    Icon(
+                                      FontAwesomeIcons.checkCircle,
+                                      color: Colors.green,
+                                    ),
+                                    //IconButton(onPressed: () {}, icon: Icon(Icons.more_vert, color: Colors.grey)),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 21),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
                                     Text("Google Drive",
                                         style: TextStyle(
                                             color: Constantes.kcDarkGreyColor,
@@ -268,8 +300,9 @@ class _HomePageState extends State<HomePage> {
                                   mainAxisAlignment: MainAxisAlignment.end,
                                   children: [
                                     Icon(
-                                      cloudServicios.isConectadoGoogleDrive ? FontAwesomeIcons.checkCircle : FontAwesomeIcons.timesCircle,
-                                      color: cloudServicios.isConectadoGoogleDrive ? Colors.green : Colors.red,
+
+                                      Provider.of<MarkerProvider>(context).isConnectedGoogleDriveFirebase || Provider.of<MarkerProvider>(context).isConnectedGoogleDrive ? FontAwesomeIcons.checkCircle : FontAwesomeIcons.timesCircle,
+                                      color: Provider.of<MarkerProvider>(context).isConnectedGoogleDriveFirebase || Provider.of<MarkerProvider>(context).isConnectedGoogleDrive ? Colors.green : Colors.red,
                                     ),
                                     //IconButton(onPressed: () {}, icon: Icon(Icons.more_vert, color: Colors.grey)),
                                   ],
@@ -324,8 +357,8 @@ class _HomePageState extends State<HomePage> {
                                   mainAxisAlignment: MainAxisAlignment.end,
                                   children: [
                                     Icon(
-                                      isConectadoOneDrive ? FontAwesomeIcons.checkCircle : FontAwesomeIcons.timesCircle,
-                                      color: isConectadoOneDrive ? Colors.green : Colors.red,
+                                      Provider.of<MarkerProvider>(context).isConnectedMicrosoftFirebase || Provider.of<MarkerProvider>(context).isConnectedMicrosoft ? FontAwesomeIcons.checkCircle : FontAwesomeIcons.timesCircle,
+                                      color: Provider.of<MarkerProvider>(context).isConnectedMicrosoftFirebase || Provider.of<MarkerProvider>(context).isConnectedMicrosoft ? Colors.green : Colors.red,
                                     ),
                                     //IconButton(onPressed: () {}, icon: Icon(Icons.more_vert, color: Colors.grey)),
                                   ],
@@ -335,7 +368,7 @@ class _HomePageState extends State<HomePage> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 17),
+                      const SizedBox(height: 9),
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.deepPurpleAccent,
