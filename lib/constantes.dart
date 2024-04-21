@@ -30,6 +30,8 @@ class Constantes {
 
   // Navegacion
   static const InicioSesionNavegacion = '/iniciar-sesion';
+  static const RegistroNavegacion = '/registro';
+  static const DetallecuentaNavegacion = '/detallecuenta';
   static const ArchivosNavegacion = '/archivos';
   static const HomeNavegacion = '/home';
   static const PerfilNavegacion = '/configuracion';
