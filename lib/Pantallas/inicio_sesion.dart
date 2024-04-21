@@ -1,13 +1,29 @@
 import 'package:appmovilesproyecto17/Firebase/firebase_authuser.dart';
+import 'package:appmovilesproyecto17/Navegacion/MarkerProvider.dart';
+import 'package:appmovilesproyecto17/Pantallas/detallescuenta.dart';
 import 'package:appmovilesproyecto17/main.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../constantes.dart';
 
 class InicioSesion extends StatelessWidget {
+
+  final TextEditingController correocontroller = TextEditingController();
+  final TextEditingController passwordcontroller = TextEditingController();
+
+  String? validateEmail(String? value) {
+    const pattern = r'(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)';
+    final regex = RegExp(pattern);
+    return (!regex.hasMatch(value!)) ? 'Ingrese un correo electrónico válido' : null;
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -45,28 +61,31 @@ class InicioSesion extends StatelessWidget {
             ),
             SizedBox(height: size.height * 0.05),
             GoogleSignIn(),
-        /*    buildRowDivider(size: size),
+            MicrosoftSignIn(),
+            buildRowDivider(size: size),
             Padding(padding: EdgeInsets.only(bottom: size.height * 0.02)),
             SizedBox(
               width: size.width * 0.8,
-              child: TextField(
+              child: TextFormField(
+                  controller: correocontroller,
+                  validator: validateEmail,
                   decoration: InputDecoration(
+                    labelText: "Correo Electronico",
                       contentPadding:
                       EdgeInsets.symmetric(vertical: 15.0, horizontal: 10.0),
-                      enabledBorder: border,
-                      focusedBorder: border)),
+                      )),
             ),
             SizedBox(
               height: size.height * 0.01,
             ),
             SizedBox(
               width: size.width * 0.8,
-              child: TextField(
+              child: TextFormField(
+                controller: passwordcontroller,
                 decoration: InputDecoration(
+                  labelText: "Contraseña",
                   contentPadding:
                   EdgeInsets.symmetric(vertical: 15.0, horizontal: 10.0),
-                  enabledBorder: border,
-                  focusedBorder: border,
                   suffixIcon: Padding(
                     child: FaIcon(
                       FontAwesomeIcons.eye,
@@ -78,7 +97,110 @@ class InicioSesion extends StatelessWidget {
               ),
             ),
             Padding(padding: EdgeInsets.only(bottom: size.height * 0.05)),
+            correocontroller.text.isNotEmpty && passwordcontroller.text.isNotEmpty ?
             SizedBox(
+              width: size.width * 0.8,
+              child: OutlinedButton(
+                onPressed: () async {
+                  try {
+                    final credenciales = await FirebaseAuth.instance.signInWithEmailAndPassword(
+                        email: correocontroller.text, password: passwordcontroller.text
+                    );
+
+                    if (credenciales != null) {
+
+                      User? user = FirebaseAuth.instance.currentUser;
+
+                      var datouser = await FirebaseFirestore.instance
+                          .collection("users")
+                          .doc(user!.uid)
+                          .get();
+
+                      if (datouser['usertokenGoogleDrive'] != "") {
+                        Provider.of<MarkerProvider>(context, listen: false).setusertokenGoogleDrive = datouser['usertokenGoogleDrive'];
+                        Provider.of<MarkerProvider>(context, listen: false).setisConnectedGoogleDrive = true;
+                      }
+
+                      var usernameaccount = FirebaseAuth.instance.currentUser;
+
+                      if (usernameaccount!.displayName != null && usernameaccount!.photoURL != null) {
+                        Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => MainPage()), (route) => false);
+                      } else {
+                        Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => Detallescuenta()), (route) => false);
+                      }
+
+                    }
+
+                  } on FirebaseAuthException catch (error) {
+                    if (error.code == 'user-not-found') {
+                      showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              content: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: <Widget>[
+                                  Text("No se encontro ningun usuario con este correo y contraseña. \nPor favor verifica o crea una cuenta. ", style: TextStyle(fontWeight: FontWeight.w800)),
+                                ],
+                              ),
+                            );
+                          }
+                      );
+                    } else if (error.code == 'invalid-email') {
+                      showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              content: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: <Widget>[
+                                  Text("El correo proporcionado no es correcto. \nPor favor verifica los datos. ", style: TextStyle(fontWeight: FontWeight.w800)),
+                                ],
+                              ),
+                            );
+                          }
+                      );
+                    } else if (error.code == 'wrong-password') {
+                      showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              content: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: <Widget>[
+                                  Text("La contraseña ingresado no coincide con el correo proporcionado. \nPor favor verifica los datos. ", style: TextStyle(fontWeight: FontWeight.w800)),
+                                ],
+                              ),
+                            );
+                          }
+                      );
+                    } else {
+                      showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              content: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: <Widget>[
+                                  Text("Los datos no coinciden con algun usuario. \nPor favor verifica los datos. ", style: TextStyle(fontWeight: FontWeight.w800)),
+                                ],
+                              ),
+                            );
+                          }
+                      );
+                    }
+                  }
+                },
+                child: Text(Constantes.textInicioSesion),
+                style: ButtonStyle(
+                    foregroundColor:
+                    MaterialStateProperty.all<Color>(Constantes.kcPrimaryColor),
+                    backgroundColor:
+                    MaterialStateProperty.all<Color>(Constantes.kcDarkBlueColor),
+                    side: MaterialStateProperty.all<BorderSide>(BorderSide.none)),
+              ),
+            )
+                :  SizedBox(
               width: size.width * 0.8,
               child: OutlinedButton(
                 onPressed: () async {},
@@ -87,25 +209,31 @@ class InicioSesion extends StatelessWidget {
                     foregroundColor:
                     MaterialStateProperty.all<Color>(Constantes.kcPrimaryColor),
                     backgroundColor:
-                    MaterialStateProperty.all<Color>(Constantes.kcBlackColor),
+                    MaterialStateProperty.all<Color>(Colors.grey),
                     side: MaterialStateProperty.all<BorderSide>(BorderSide.none)),
               ),
             ),
+            SizedBox(height: size.height * 0.04),
             RichText(
-                textAlign: TextAlign.center,
-                text: TextSpan(children: <TextSpan>[
-                  TextSpan(
-                      text: Constantes.textCuenta,
-                      style: TextStyle(
-                        color: Constantes.kcDarkGreyColor,
-                      )),
-                  TextSpan(
-                      text: Constantes.textRegistro,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Constantes.kcDarkBlueColor,
-                      )),
-                ])),*/
+                      textAlign: TextAlign.center,
+                      text: TextSpan(children: <TextSpan>[
+                        TextSpan(
+                            text: Constantes.textCuenta,
+                            style: TextStyle(
+                              color: Constantes.kcDarkGreyColor,
+                            )),
+                      ])),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pushReplacementNamed(Constantes.RegistroNavegacion);
+              },
+              child: Text(
+                  Constantes.textRegistro,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Constantes.kcDarkBlueColor,
+                  )),
+            ),
           ],
         ),
       ),
@@ -128,6 +256,95 @@ Widget buildRowDivider({required Size size}) {
       Expanded(child: Divider(color: Constantes.kcDarkGreyColor)),
     ]),
   );
+}
+
+class MicrosoftSignIn extends StatefulWidget {
+  MicrosoftSignIn({Key? key}) : super(key: key);
+
+  @override
+  _MicrosoftInState createState() => _MicrosoftInState();
+}
+
+class _MicrosoftInState extends State<MicrosoftSignIn> {
+  bool isLoading = false;
+
+  @override
+  Widget build(BuildContext context) {
+    Size size = MediaQuery.of(context).size;
+    return  !isLoading? SizedBox(
+      width: size.width * 0.8,
+      child: OutlinedButton.icon(
+        icon: FaIcon(FontAwesomeIcons.microsoft),
+        onPressed: () async {
+          setState(() {
+            isLoading = true;
+          });
+          FirebaseAuthUsuario firebasedato = new FirebaseAuthUsuario();
+          try {
+            var usermicrosoft = await firebasedato.signInwithMicrosoft();
+            User? user = FirebaseAuth.instance.currentUser;
+
+            var datouser = await FirebaseFirestore.instance
+                .collection("users")
+                .doc(user!.uid)
+                .get();
+
+            if (datouser['usertokenGoogleDrive'] != "") {
+              Provider.of<MarkerProvider>(context, listen: false).setusertokenGoogleDrive = datouser['usertokenGoogleDrive'];
+              Provider.of<MarkerProvider>(context, listen: false).setisConnectedGoogleDrive = true;
+            }
+
+            if (usermicrosoft != null && usermicrosoft != "") {
+
+              var usernameaccount = FirebaseAuth.instance.currentUser!.photoURL;
+              Provider.of<MarkerProvider>(context, listen: false).setusertokenOneDrive = usermicrosoft;
+
+              if (usernameaccount != null && usernameaccount != "") {
+                Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => MainPage()), (route) => false);
+              } else {
+                Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => Detallescuenta()), (route) => false);
+              }
+            }
+          } catch(e){
+            if(e is FirebaseAuthException){
+              showMessage(e.message!);
+            }
+          }
+          setState(() {
+            isLoading = false;
+          });
+        },
+        label: Text(
+          "Iniciar sesion con Microsoft",
+          style: TextStyle(
+              color: Constantes.kcBlackColor, fontWeight: FontWeight.bold),
+        ),
+        style: ButtonStyle(
+            backgroundColor:
+            MaterialStateProperty.all<Color>(Constantes.kcGreyColor),
+            side: MaterialStateProperty.all<BorderSide>(BorderSide.none)),
+      ),
+    ) : CircularProgressIndicator();
+  }
+
+  void showMessage(String message) {
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text("Error"),
+            content: Text(message),
+            actions: [
+              TextButton(
+                child: Text("Ok"),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              )
+            ],
+          );
+        });
+  }
 }
 
 class GoogleSignIn extends StatefulWidget {
@@ -196,3 +413,4 @@ class _GoogleSignInState extends State<GoogleSignIn> {
         });
   }
 }
+

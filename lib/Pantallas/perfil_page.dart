@@ -1,10 +1,12 @@
 import 'package:appmovilesproyecto17/Firebase/firebase_authuser.dart';
 import 'package:appmovilesproyecto17/Navegacion/MarkerProvider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../Apis/cloud_servicios.dart';
 import '../constantes.dart';
@@ -28,6 +30,11 @@ class _SettingPageState extends State<SettingPage> {
   @override
   Widget build(BuildContext context) {
     var isConectadoOneDrive = Provider.of<MarkerProvider>(context).tokenOneDrive;
+    var isConnectedGoogleDriveFirebase = Provider.of<MarkerProvider>(context).isConnectedGoogleDriveFirebase;
+    var isConnectedMicrosoftFirebase = Provider.of<MarkerProvider>(context).isConnectedMicrosoftFirebase;
+    var isConnectedGoogleDrive = Provider.of<MarkerProvider>(context).isConnectedGoogleDrive;
+    var isConnectedMicrosoft = Provider.of<MarkerProvider>(context).isConnectedMicrosoft;
+
     double screenwidth = MediaQuery.of(context).size.width;
 
     return LayoutBuilder(
@@ -40,10 +47,37 @@ class _SettingPageState extends State<SettingPage> {
               IconButton(
                 icon: Icon(Icons.logout, color: Colors.white),
                 onPressed: () async {
-                  FirebaseAuthUsuario firebase = FirebaseAuthUsuario();
-                  await firebase.signOutconGoogle();
-                  Navigator.pushReplacementNamed(
-                      context, Constantes.InicioSesionNavegacion);
+                  showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: Text("Cerrar Sesion"),
+                          content: Text("¿Estas seguro de que quieres cerrar sesion?"),
+                          actions: <Widget>[
+                            TextButton(
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+                                child: Text("Cancelar"),
+                            ),
+                            TextButton(
+                                onPressed: () async {
+                                  FirebaseAuthUsuario firebase = FirebaseAuthUsuario();
+                                  isConnectedGoogleDriveFirebase || isConnectedGoogleDrive ?
+                                  await firebase.signOutconGoogle() : isConnectedMicrosoftFirebase || isConnectedMicrosoft ? await firebase.signOutconMicrosoft() : await FirebaseAuth.instance.signOut();
+                                  Provider.of<MarkerProvider>(context, listen: false).setisConnectedGoogleDrive = false;
+                                  Provider.of<MarkerProvider>(context, listen: false).setisConnectedGoogleDriveFirebase = false;
+                                  Provider.of<MarkerProvider>(context, listen: false).setisConnectedMicrosoftFirebase = false;
+                                  Provider.of<MarkerProvider>(context, listen: false).setisConnectedMicrosoft = false;
+
+                                  Navigator.pushReplacementNamed(
+                                      context, Constantes.InicioSesionNavegacion);
+                                },
+                                child: Text("Confirmar"),
+                            ),
+                          ],
+                        );
+                      });
                 },
               ),
             ],
@@ -176,6 +210,60 @@ class _SettingPageState extends State<SettingPage> {
                                           children: [
                                             Row(
                                               children: [
+                                                Text("AllCloud (Local)",
+                                                    style: TextStyle(
+                                                        color: Constantes
+                                                            .kcDarkGreyColor,
+                                                        fontWeight: FontWeight
+                                                            .w500,
+                                                        fontSize: screenwidth * 0.04)
+                                                ),
+                                                SizedBox(width: 17),
+                                                Icon(FontAwesomeIcons.cloud,
+                                                    color: Colors.grey),
+                                              ],
+                                            ),
+                                            Row(
+                                              mainAxisAlignment: MainAxisAlignment
+                                                  .end,
+                                              children: [
+                                                Icon(
+                                                  FontAwesomeIcons
+                                                      .checkCircle,
+                                                  color: Colors.green,
+                                                ),
+                                                PopupMenuButton(
+                                                  icon: Icon(Icons.more_vert,
+                                                      color: Colors.black),
+                                                  itemBuilder: (context) =>
+                                                  [
+                                                    PopupMenuItem(
+                                                      child: ListTile(
+                                                        leading: Icon(Icons.logout,
+                                                            color: Colors.grey),
+                                                        title: Text("Quitar cuenta",
+                                                            style: TextStyle(
+                                                                color: Colors
+                                                                    .grey)),
+                                                        onTap: () {
+                                                          Navigator.pop(context);
+                                                        }
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 21),
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment
+                                              .spaceBetween,
+                                          children: [
+                                            Row(
+                                              children: [
                                                 Text("Google Drive",
                                                     style: TextStyle(
                                                         color: Constantes
@@ -195,14 +283,12 @@ class _SettingPageState extends State<SettingPage> {
                                                   .end,
                                               children: [
                                                 Icon(
-                                                  cloudServicios
-                                                      .isConectadoGoogleDrive
+                                                   isConnectedGoogleDriveFirebase || isConnectedGoogleDrive
                                                       ? FontAwesomeIcons
                                                       .checkCircle
                                                       : FontAwesomeIcons
                                                       .timesCircle,
-                                                  color: cloudServicios
-                                                      .isConectadoGoogleDrive
+                                                  color: isConnectedGoogleDriveFirebase || isConnectedGoogleDrive
                                                       ? Colors.green
                                                       : Colors.red,
                                                 ),
@@ -214,34 +300,54 @@ class _SettingPageState extends State<SettingPage> {
                                                     PopupMenuItem(
                                                       child: ListTile(
                                                         leading: Icon(
-                                                            cloudServicios
-                                                                .isConectadoGoogleDrive
+                                                          isConnectedGoogleDriveFirebase ? Icons.logout
+                                                            :  isConnectedGoogleDrive
                                                                 ? Icons.logout
                                                                 : Icons.login,
-                                                            color: cloudServicios
-                                                                .isConectadoGoogleDrive
-                                                                ? Colors.grey
+                                                            color: isConnectedGoogleDriveFirebase ? Colors.grey
+                                                                :  isConnectedGoogleDrive
+                                                                ? Colors.red
                                                                 : Colors.black),
                                                         title: Text(
-                                                            cloudServicios
-                                                                .isConectadoGoogleDrive
+                                                            isConnectedGoogleDriveFirebase ? "Quitar cuenta" :
+                                                            isConnectedGoogleDrive
                                                                 ? "Quitar cuenta"
                                                                 : "Agregar cuenta",
-                                                            style: cloudServicios
-                                                                .isConectadoGoogleDrive
+                                                            style: isConnectedGoogleDriveFirebase ? TextStyle(color: Colors.grey) : isConnectedGoogleDrive
                                                                 ? TextStyle(
                                                                 color: Colors
-                                                                    .grey)
+                                                                    .black)
                                                                 : TextStyle(
                                                                 color: Colors
                                                                     .black)),
-                                                        onTap: cloudServicios
-                                                            .isConectadoGoogleDrive
-                                                            ? null
-                                                            : () {
-                                                          Navigator.pop(
-                                                              context);
-                                                        },
+                                                        onTap: isConnectedGoogleDriveFirebase ? null : isConnectedGoogleDrive
+                                                            ? () async {
+                                                              FirebaseAuthUsuario firebase = FirebaseAuthUsuario();
+                                                              var userGoogleDrive = await firebase.signOutAccount1ConnectWithGoogle();
+                                                              if (userGoogleDrive != null){
+                                                                Provider.of<MarkerProvider>(context, listen: false).setisConnectedGoogleDrive = false;
+                                                                Provider.of<MarkerProvider>(context, listen: false).setusertokenGoogleDrive = "";
+                                                              }
+                                                              setState(() {
+
+                                                              });
+                                                              Navigator.of(context).pop();
+                                                            }
+                                                            : () async {
+                                                              FirebaseAuthUsuario firebase = FirebaseAuthUsuario();
+                                                              var usertGoogleDrive = await firebase.signAccountConnectWithGoogle();
+                                                              var datouser = await FirebaseFirestore.instance.collection("users").doc(user!.uid).get();
+                                                              if (usertGoogleDrive != null) {
+                                                                Provider.of<MarkerProvider>(context, listen: false).setisConnectedGoogleDrive = true;
+                                                                if (datouser != null) {
+                                                                  Provider.of<MarkerProvider>(context, listen: false).setusertokenGoogleDrive = datouser['usertokenGoogleDrive'];
+                                                                }
+                                                              }
+                                                              setState(() {
+
+                                                              });
+                                                              Navigator.of(context).pop();
+                                                            },
                                                       ),
                                                     ),
 
@@ -304,12 +410,12 @@ class _SettingPageState extends State<SettingPage> {
                                                   .end,
                                               children: [
                                                 Icon(
-                                                  isConectadoOneDrive
+                                                  isConnectedMicrosoftFirebase || isConnectedMicrosoft
                                                       ? FontAwesomeIcons
                                                       .checkCircle
                                                       : FontAwesomeIcons
                                                       .timesCircle,
-                                                  color: isConectadoOneDrive
+                                                  color: isConnectedMicrosoftFirebase || isConnectedMicrosoft
                                                       ? Colors.green
                                                       : Colors.red,
                                                 ),
@@ -321,24 +427,27 @@ class _SettingPageState extends State<SettingPage> {
                                                     PopupMenuItem(
                                                       child: ListTile(
                                                         leading: Icon(
-                                                            isConectadoOneDrive
+                                                            isConnectedMicrosoftFirebase ? Icons.logout
+                                                            : isConnectedMicrosoft
                                                                 ? Icons.logout
                                                                 : Icons.login,
-                                                            color: isConectadoOneDrive
+                                                            color: isConnectedMicrosoftFirebase ? Colors.grey : isConnectedMicrosoft
                                                                 ? Colors.red
                                                                 : Colors.black),
                                                         title: Text(
-                                                            isConectadoOneDrive
+                                                            isConnectedMicrosoftFirebase ? "Quitar cuenta"
+                                                            : isConnectedMicrosoft
                                                                 ? "Quitar cuenta"
                                                                 : "Agregar cuenta",
-                                                            style: isConectadoOneDrive
+                                                            style: isConnectedMicrosoftFirebase ? TextStyle(color: Colors.grey)
+                                                            : isConnectedMicrosoft
                                                                 ? TextStyle(
                                                                 color: Colors
                                                                     .black)
                                                                 : TextStyle(
                                                                 color: Colors
                                                                     .black)),
-                                                        onTap: isConectadoOneDrive
+                                                        onTap: isConnectedMicrosoftFirebase ? null : isConectadoOneDrive
                                                             ? () {
                                                               cloudServicios.disconnectOneDrive(context);
                                                               Navigator.pop(context);
@@ -362,16 +471,41 @@ class _SettingPageState extends State<SettingPage> {
                                   const SizedBox(height: 21),
                                 ],
                               ),
-                              Text("Opciones", style: TextStyle(
-                                  color: Constantes.kcDarkBlueColor,
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: screenwidth * 0.07
-                              )),
-                              Text("Proximamente", style: TextStyle(
-                                  color: Colors.grey,
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: screenwidth * 0.05
-                              )),
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(5, 0, 5, 0),
+                                child: RichText(
+                                    textAlign: TextAlign.center,
+                                    text: TextSpan(children: <TextSpan>[
+                                      TextSpan(
+                                          text: "Desarrolladores",
+                                          style: TextStyle(
+                                            color: Constantes.kcDarkBlueColor,
+                                            fontWeight: FontWeight.w500,
+                                            fontSize: screenwidth * 0.07,
+                                          )),
+                                      TextSpan(
+                                          text: "\nIntegrantes del Equipo 4",
+                                          style: TextStyle(
+                                              color: Constantes.kcBlackColor,
+                                              fontWeight: FontWeight.w500,
+                                              fontSize: screenwidth * 0.05)),
+
+                                    ])
+                                ),
+                              ),
+                              const SizedBox(height: 21),
+                              Text("1999491 - Francisco Javier Blas Garza", style: TextStyle(fontSize: screenwidth * 0.04, fontWeight: FontWeight.w500)),
+                              const SizedBox(height: 21),
+                              Text("2109637 - Ángel Alfredo González Mora", style: TextStyle(fontSize: screenwidth * 0.04, fontWeight: FontWeight.w500)),
+                              const SizedBox(height: 21),
+                              Text("2007777 - David Alejandro Garza Treviño", style: TextStyle(fontSize: screenwidth * 0.04, fontWeight: FontWeight.w500)),
+                              const SizedBox(height: 21),
+                              Text("2001255 - Emilio Nicanor Hernández", style: TextStyle(fontSize: screenwidth * 0.04, fontWeight: FontWeight.w500)),
+                              const SizedBox(height: 21),
+                              Text("1957773 - Liam Yahir De Anda Fang", style: TextStyle(fontSize: screenwidth * 0.04, fontWeight: FontWeight.w500)),
+                              const SizedBox(height: 21),
+                              Text("1964534 - Jonathan Aldair Martínez González", style: TextStyle(fontSize: screenwidth * 0.04, fontWeight: FontWeight.w500)),
+                              const SizedBox(height: 21),
                             ],
                           ),
                         )
