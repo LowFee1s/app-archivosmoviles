@@ -10,6 +10,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
@@ -24,6 +25,7 @@ import 'package:flutter_web_auth/flutter_web_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 
 class CloudServicios {
@@ -266,7 +268,20 @@ class CloudServicios {
   }
 
   Future<void> uploadFiletoOneDrive(io.File file17, String accesstoken) async {
-    var url = Uri.parse('https://graph.microsoft.com/v1.0/me/drive/root:/${basename(file17.path)}:/content');
+    var fileName;
+    var archivos = await getFilesOnedrive(accesstoken);
+    var fileNametipoUser = basename(file17.path);
+    fileNametipoUser = fileNametipoUser.substring(0, fileNametipoUser.lastIndexOf('.'));
+    var onedrivearchivos = archivos.where((file) => (file['nombre'] as String).contains(fileNametipoUser)).toList();
+
+    print(onedrivearchivos);
+    if (onedrivearchivos.length <= 0) {
+      fileName = basename(file17.path);
+    } else {
+      fileName = basename(file17.path).replaceFirst('.', ' (${onedrivearchivos.length + 1}).');
+    }
+
+    var url = Uri.parse('https://graph.microsoft.com/v1.0/me/drive/root:/$fileName:/content');
 
     // Lee el archivo como bytes
     var fileBytes = await file17.readAsBytes();
@@ -282,12 +297,13 @@ class CloudServicios {
     // Envía la solicitud
     var response = await request.send();
 
-    if (response.statusCode == 201) {
+    if (response.statusCode == 200 || response.statusCode == 201) {
       print('Archivo subido correctamente');
     } else {
       print('Error al subir el archivo: ${response.statusCode}');
     }
   }
+
 
   // conexion con dropbox login y logout con dropbox_client
 
@@ -441,6 +457,30 @@ class CloudServicios {
     await OpenFile.open(file.path);
   }
 
+  Future<File> downloadFileFromAllCloud11(String userId, String fileName) async {
+      // Create a reference to the file you want to download
+      final storageRef = FirebaseStorage.instance.ref().child(userId).child(fileName);
+
+      // Get the download URL
+      final downloadUrl = await storageRef.getDownloadURL();
+
+      // Use the download URL to download the file
+      final response = await http.get(Uri.parse(downloadUrl));
+
+      // Get the path to the device's external storage directory
+      final directory = await getExternalStorageDirectory();
+
+      // Create a new file in the external storage directory
+      final file = File('${directory!.path}/$fileName');
+
+      // Write the downloaded data to the file
+      await file.writeAsBytes(response.bodyBytes);
+      print("Archivo descargado correctamente: ${file.path}");
+
+      return file;
+
+    }
+
 
   Future<List<Map<String, Object?>>> getAllcloudFiles(String userId) async {
     // Create a storage reference from our app
@@ -468,28 +508,88 @@ class CloudServicios {
   }
 
   Future<void> downloadFileFromOneDrive(String accesstoken, String fileid17) async {
-    var httpClient = http.Client();
-    var requestUrl = 'https://graph.microsoft.com/v1.0/me/drive/items/$fileid17/content';
+    var httpClient = HttpClient();
+    try {
+      var request = await httpClient.getUrl(Uri.parse('https://graph.microsoft.com/v1.0/me/drive/items/$fileid17/content'));
+      request.headers.set('Authorization', 'Bearer $accesstoken');
+      var response = await request.close();
 
-    var headers = {
-      'Authorization': 'Bearer $accesstoken',
-    };
+      if (response.statusCode != 200) {
+        print('Error downloading file: ${response.statusCode}');
+        return;
+      }
 
-    var response = await httpClient.get(Uri.parse(requestUrl), headers: headers);
+      var contentDisposition = response.headers.value('content-disposition');
+      String fileName = "";
 
-    if (response.statusCode == 302) {
-      var downloadUrl = response.headers['location'];
-      var downloadResponse = await httpClient.get(Uri.parse(downloadUrl!));
+      if (contentDisposition != null) {
+        var parts = contentDisposition.split(';');
+        for (var part in parts) {
+          var keyValue = part.trim().split('=');
+          if (keyValue[0].toLowerCase() == 'filename') {
+            fileName = keyValue[1].replaceAll('"', ''); // Remove quotes from filename
+            break; // Stop after finding filename
+          }
+        }
+      }
+
+      var bytes = await consolidateHttpClientResponseBytes(response);
 
       final directory = await getExternalStorageDirectory();
-      final saveFile = io.File('${directory!.path}/$fileid17');
+      final file = File('${directory!.path}/$fileName');
 
-      await saveFile.writeAsBytes(downloadResponse.bodyBytes);
+      await file.writeAsBytes(bytes);
 
-      print("Archivo descargado correctamente: ${saveFile.path}");
-      OpenFile.open(saveFile.path);
-    } else {
-      print('Error al descargar el archivo: ${response.statusCode}');
+      print('Archivo descargado correctamente: ${file.path}');
+      await OpenFile.open(file.path);
+
+    } catch (e) {
+      print('Error: $e');
+    } finally {
+      httpClient.close();
+    }
+  }
+
+  Future<File?> downloadFileDetailFromOneDrive11(String accesstoken, String fileid17) async {
+    var httpClient = HttpClient();
+    try {
+      var request = await httpClient.getUrl(Uri.parse('https://graph.microsoft.com/v1.0/me/drive/items/$fileid17/content'));
+      request.headers.set('Authorization', 'Bearer $accesstoken');
+      var response = await request.close();
+
+      if (response.statusCode != 200) {
+        print('Error downloading file: ${response.statusCode}');
+        return null;
+      }
+
+      var contentDisposition = response.headers.value('content-disposition');
+      String fileName = "";
+
+      if (contentDisposition != null) {
+        var parts = contentDisposition.split(';');
+        for (var part in parts) {
+          var keyValue = part.trim().split('=');
+          if (keyValue[0].toLowerCase() == 'filename') {
+            fileName = keyValue[1].replaceAll('"', ''); // Remove quotes from filename
+            break; // Stop after finding filename
+          }
+        }
+      }
+
+      var bytes = await consolidateHttpClientResponseBytes(response);
+      final directory = await getExternalStorageDirectory();
+      final file = File('${directory!.path}/$fileName');
+
+      await file.writeAsBytes(bytes);
+
+      print('Archivo descargado correctamente: ${file.path}');
+
+      return file;
+
+    } catch (e) {
+      print('Error: $e');
+    } finally {
+      httpClient.close();
     }
   }
 
@@ -533,18 +633,67 @@ class CloudServicios {
     }
   }
 
-  Future<void> moveFile(String accesstokengoogledrive, String accesstokenonedrive, bool uploadtoGoogleDrive, bool uploadtoOneDrive, bool uploadToDropbox, String file17) async {
-    if (uploadtoGoogleDrive) {
-      print('goodmove');
-      await movefileserviceGoogleDrive(file17, accesstokengoogledrive);
+  Future<bool> shareFile(context, String nombrealmacenamiento, String idfile17, String file17, User user, String accesstokenonedrive, String accesstokengoogledrive) async {
+    var documento;
+    var dato = false;
+    if (nombrealmacenamiento == "Google Drive") {
+      documento = await downloadFileDetailtoGoogleDrive11(accesstokengoogledrive, idfile17);
+    } else if (nombrealmacenamiento == "AllCloud") {
+      documento = await downloadFileFromAllCloud11(user.uid, file17);
+    } else if (nombrealmacenamiento == "OneDrive") {
+      documento = await downloadFileDetailFromOneDrive11(accesstokenonedrive, idfile17);
     }
-    if (uploadtoOneDrive) {
-      print('goodmove12');
-      await movefileserviceOneDrive(file17, accesstokenonedrive);
+
+    if (documento != null) {
+      final box = context.findRenderObject() as RenderBox?;
+
+      await Share.shareFiles(['${documento.path}'], text: 'Archivo a compartir',
+          sharePositionOrigin: box!.localToGlobal(Offset.zero) & box.size).then((value) => dato = true);
+
+      dato = true;
     }
-    if (uploadToDropbox) {
-      print('goodmove17');
-      await movefileserviceAllCloud(FirebaseAuth.instance.currentUser!.uid, file17);
+    return dato;
+  }
+
+  Future<void> moveFile(String nombrealmacenamiento, User user, String accesstokengoogledrive, String accesstokenonedrive, bool uploadtoGoogleDrive, bool uploadtoOneDrive, bool uploadToDropbox, String idfile17, String file17) async {
+    var documento;
+    var dato;
+
+    if (nombrealmacenamiento == "Google Drive") {
+      documento = await downloadFileDetailtoGoogleDrive11(accesstokengoogledrive, idfile17);
+    } else if (nombrealmacenamiento == "AllCloud") {
+      documento = await downloadFileFromAllCloud11(user.uid, file17);
+    } else if (nombrealmacenamiento == "OneDrive") {
+      documento = await downloadFileDetailFromOneDrive11(accesstokenonedrive, idfile17);
+    }
+
+    if (documento != null) {
+      if (uploadtoGoogleDrive) {
+        print('goodmove');
+        await uploadFiletoGoogleDrive(documento, accesstokengoogledrive).then((value) => dato = true);
+      }
+      if (uploadtoOneDrive) {
+        print('goodmove12');
+        await uploadFiletoOneDrive(documento, accesstokenonedrive).then((value) => dato = true);
+      }
+      if (uploadToDropbox) {
+        print('goodmove17');
+        await uploadToAllcloud(
+            FirebaseAuth.instance.currentUser!.uid, documento).then((value) => dato = true);
+      }
+
+      if (dato) {
+        if (nombrealmacenamiento == "Google Drive") {
+          await deleteGoogleDriveFile(idfile17, accesstokengoogledrive);
+        }
+        if (nombrealmacenamiento == "OneDrive") {
+          await deletetoOneDriveFile(idfile17, accesstokenonedrive);
+        }
+        if (nombrealmacenamiento == "AllCloud") {
+          await deletetoAllCloudFile(
+              FirebaseAuth.instance.currentUser!.uid, file17);
+        }
+      }
     }
   }
 
@@ -593,18 +742,6 @@ class CloudServicios {
 
   }
 
-  Future<void> movefileserviceGoogleDrive(String fileid17, String accesstoken) async {
-
-  }
-
-  Future<void> movefileserviceOneDrive(String fileid17, String accesstoken) async {
-
-  }
-
-  Future<void> movefileserviceAllCloud(String accesstoken, String fileid17) async {
-
-  }
-
   Future<void> deletetoAllCloudFile(String userId, String fileName) async {
     // Create a reference to the file you want to delete
     final storageRef = FirebaseStorage.instance.ref().child(userId).child(fileName);
@@ -616,79 +753,138 @@ class CloudServicios {
   }
 
   Future<void> deletetoOneDriveFile(String fileName, String accesstoken) async {
-    var httpClient = http.Client();
-    var requestUrl = 'https://graph.microsoft.com/v1.0/me/drive/items/$fileName';
+    var httpClient = HttpClient();
+    try {
+      var request = await httpClient.deleteUrl(Uri.parse('https://graph.microsoft.com/v1.0/me/drive/items/$fileName'));
+      request.headers.set('Authorization', 'Bearer $accesstoken');
+      var response = await request.close();
 
-    var headers = {
-      'Authorization': 'Bearer $accesstoken',
-    };
+      if (response.statusCode != 204) {
+        print('Error eliminando el archivo: ${response.statusCode}');
+        return;
+      }
 
-    var response = await httpClient.delete(Uri.parse(requestUrl), headers: headers);
-
-    if (response.statusCode == 204) {
-      print("Archivo eliminado correctamente");
-    } else {
-      print('Error al eliminar el archivo: ${response.statusCode}');
+      print("Archivo quitado correctamente");
+    } catch (e) {
+      print('Error: $e');
+    } finally {
+      httpClient.close();
     }
   }
 
   Future<void> downloadFiletoGoogleDrive(String accesstoken, String fileid17) async {
-    var datouser;
-    GoogleSignInAccount? account = google1SignIn.currentUser;
-    if (accesstoken == ""){
-      if (account == null) {
-        account = await google1SignIn.signInSilently();
-      }
-      final authHeaders = await account!.authHeaders;
-      datouser = authHeaders['Authorization']!.split(' ').last;
-    } else {
-      datouser = accesstoken;
+  var datouser;
+  GoogleSignInAccount? account = google1SignIn.currentUser;
+  if (accesstoken == ""){
+    if (account == null) {
+      account = await google1SignIn.signInSilently();
     }
-    final authenticateClient = authenticatedClient(http.Client(), AccessCredentials(
-        AccessToken('Bearer', datouser, DateTime.now().add(Duration(hours: 1)).toUtc()),
-        null,
-        ['https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/drive']
-      ));
-
-      final driveApi = drive.DriveApi(authenticateClient);
-
-      final fileMetaDato = await driveApi.files.get(fileid17) as drive.File;
-
-      String fileName17 = fileMetaDato.name!;
-
-      String extension = fileMetaDato.name!.split('/').last;
-
-      drive.Media file = await driveApi.files.get(fileid17, downloadOptions: drive.DownloadOptions.fullMedia) as drive.Media;
-
-      final carpetaarchivorealizado17 = await getExternalStorageDirectory();
-
-      final saveFile = io.File('${carpetaarchivorealizado17!.path}/$fileName17.$extension');
-      /* final taskId = await FlutterDownloader.enqueue(
-        url: 'https://${saveFile.path}',
-        savedDir: carpetaarchivorealizado17.path,
-        fileName: fileName17,
-        showNotification: true,
-        openFileFromNotification: true,
-      ); */
-
-      List<int> dataStore = [];
-
-      file.stream.listen((dato) {
-        dataStore.insertAll(dataStore.length, dato);
-      }, onDone: () async {
-        saveFile.writeAsBytes(dataStore);
-        print("Archivo descargado correctamente: ${saveFile.path}");
-        OpenFile.open(saveFile.path);
-      }, onError: (error) {
-        print("Archivo subido correctamente: $error");
-      });
-
+    final authHeaders = await account!.authHeaders;
+    datouser = authHeaders['Authorization']!.split(' ').last;
+  } else {
+    datouser = accesstoken;
   }
+  final authenticateClient = authenticatedClient(http.Client(), AccessCredentials(
+      AccessToken('Bearer', datouser, DateTime.now().add(Duration(hours: 1)).toUtc()),
+      null,
+      ['https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/drive']
+    ));
+
+    final driveApi = drive.DriveApi(authenticateClient);
+
+    final fileMetaDato = await driveApi.files.get(fileid17) as drive.File;
+
+    String fileName17 = fileMetaDato.name!;
+
+    String extension = fileMetaDato.name!.split('/').last;
+
+    drive.Media file = await driveApi.files.get(fileid17, downloadOptions: drive.DownloadOptions.fullMedia) as drive.Media;
+
+    final carpetaarchivorealizado17 = await getExternalStorageDirectory();
+
+    final saveFile = io.File('${carpetaarchivorealizado17!.path}/$fileName17.$extension');
+    /* final taskId = await FlutterDownloader.enqueue(
+      url: 'https://${saveFile.path}',
+      savedDir: carpetaarchivorealizado17.path,
+      fileName: fileName17,
+      showNotification: true,
+      openFileFromNotification: true,
+    ); */
+
+    List<int> dataStore = [];
+
+    file.stream.listen((dato) {
+      dataStore.insertAll(dataStore.length, dato);
+    }, onDone: () async {
+      saveFile.writeAsBytes(dataStore);
+      print("Archivo descargado correctamente: ${saveFile.path}");
+      OpenFile.open(saveFile.path);
+    }, onError: (error) {
+      print("Archivo subido correctamente: $error");
+    });
+
+}
+
+  Future<File> downloadFileDetailtoGoogleDrive11(String accesstoken, String fileid17) async {
+  var datouser;
+  var documento;
+
+  GoogleSignInAccount? account = google1SignIn.currentUser;
+  if (accesstoken == ""){
+    if (account == null) {
+      account = await google1SignIn.signInSilently();
+    }
+    final authHeaders = await account!.authHeaders;
+    datouser = authHeaders['Authorization']!.split(' ').last;
+  } else {
+    datouser = accesstoken;
+  }
+  final authenticateClient = authenticatedClient(http.Client(), AccessCredentials(
+      AccessToken('Bearer', datouser, DateTime.now().add(Duration(hours: 1)).toUtc()),
+      null,
+      ['https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/drive']
+    ));
+
+    final driveApi = drive.DriveApi(authenticateClient);
+
+    final fileMetaDato = await driveApi.files.get(fileid17) as drive.File;
+
+    String fileName17 = fileMetaDato.name!.split('/').last;
+
+    String extension = fileMetaDato.name!.substring(0, fileMetaDato.name!.lastIndexOf('.'));
+
+    drive.Media file = await driveApi.files.get(fileid17, downloadOptions: drive.DownloadOptions.fullMedia) as drive.Media;
+
+    final carpetaarchivorealizado17 = await getExternalStorageDirectory();
+
+    final saveFile = io.File('${carpetaarchivorealizado17!.path}/$fileName17');
+    /* final taskId = await FlutterDownloader.enqueue(
+      url: 'https://${saveFile.path}',
+      savedDir: carpetaarchivorealizado17.path,
+      fileName: fileName17,
+      showNotification: true,
+      openFileFromNotification: true,
+    ); */
+
+    List<int> dataStore = [];
+
+    file.stream.listen((dato) {
+      dataStore.insertAll(dataStore.length, dato);
+    }, onDone: () async {
+      saveFile.writeAsBytes(dataStore);
+      print("Archivo descargado correctamente: ${saveFile.path}");
+      documento = saveFile;
+
+    }, onError: (error) {
+      print("Archivo subido correctamente: $error");
+    });
+    return saveFile;
+}
 
   Future<void> deleteGoogleDriveFile(String fileid17, String accesstoken) async {
     var datouser;
     GoogleSignInAccount? account = google1SignIn.currentUser;
-    if (accesstoken == null) {
+    if (accesstoken == "") {
       if (account == null) {
         account = await google1SignIn.signInSilently();
       }
@@ -718,4 +914,6 @@ class CloudServicios {
     await google1SignIn.signOut();
     isConectadoGoogleDrive = false;
   }
+
+
 }

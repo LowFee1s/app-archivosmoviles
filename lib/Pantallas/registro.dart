@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:appmovilesproyecto17/Firebase/firebase_authuser.dart';
 import 'package:appmovilesproyecto17/Pantallas/detallescuenta.dart';
 import 'package:appmovilesproyecto17/main.dart';
@@ -11,15 +12,28 @@ import 'package:provider/provider.dart';
 import '../Navegacion/MarkerProvider.dart';
 import '../constantes.dart';
 
-class Registro extends StatelessWidget {
+class Registro extends StatefulWidget {
+
+  @override
+  _Registro createState() => _Registro();
+}
+
+class _Registro extends State<Registro> {
 
   final TextEditingController correocontroller = TextEditingController();
+  Timer? _timer;
   final TextEditingController passwordcontroller = TextEditingController();
 
   String? validateEmail(String? value) {
     const pattern = r'(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)';
     final regex = RegExp(pattern);
     return (!regex.hasMatch(value!)) ? 'Ingrese un correo electrónico válido' : null;
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 
 
@@ -80,6 +94,7 @@ class Registro extends StatelessWidget {
               width: size.width * 0.8,
               child: TextFormField(
                 controller: passwordcontroller,
+                obscureText: true,
                 decoration: InputDecoration(
                   labelText: "Contraseña",
                   contentPadding:
@@ -107,22 +122,52 @@ class Registro extends StatelessWidget {
 
                     User? user = FirebaseAuth.instance.currentUser;
 
-                    await FirebaseFirestore.instance
-                        .collection("users")
-                        .doc(user!.uid)
-                        .set({
-                      "useridGoogleDrive": "",
-                      "useremailGoogleDrive": "",
-                      "usertokenGoogleDrive": "",
-                      "useroneDriveToken": "",
-                    });
+                    await user!.sendEmailVerification();
 
+                    var dialog = showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            content: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: <Widget>[
+                                Text("Se ha enviado un email de verificación a\nsu correo. Por favor, verifique su cuenta.", style: TextStyle(fontSize: size.width * 0.02, fontWeight: FontWeight.w800)),
+                              ],
+                            ),
+                          );
+                        }
+                    );
 
-                    if (credenciales != null) {
-                      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => Detallescuenta()), (route) => false);
-                    }
+                    if (user != null) {
+                          _timer = Timer.periodic(Duration(seconds: 10), (timer) async {
+                            await user!.reload();
+                            user = FirebaseAuth.instance.currentUser;
 
-                  } on FirebaseAuthException catch (error) {
+                            if (credenciales != null && user!.emailVerified) {
+
+                                await FirebaseFirestore.instance
+                                    .collection("users")
+                                    .doc(user!.uid)
+                                    .set({
+                                  "useridGoogleDrive": "",
+                                  "useremailGoogleDrive": "",
+                                  "usertokenGoogleDrive": "",
+                                  "usertokenrefreshGoogleDrive": "",
+                                  "useroneDrivetokenrefresh": "",
+                                  "useroneDrivetoken": "",
+                                });
+
+                                timer.cancel();
+
+                                navigatorKey.currentState!.pushAndRemoveUntil(
+                                    MaterialPageRoute(
+                                        builder: (context) => Detallescuenta()),
+                                    (route) => false);
+                              }
+                            });
+
+                          }
+                        } on FirebaseAuthException catch (error) {
                     if (error.code == 'user-not-found') {
                       showDialog(
                           context: context,
@@ -131,7 +176,21 @@ class Registro extends StatelessWidget {
                               content: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: <Widget>[
-                                  Text("No se encontro ningun usuario con este correo y contraseña. \nPor favor verifica o crea una cuenta. ", style: TextStyle(fontWeight: FontWeight.w800)),
+                                  Text("No se encontro ningun usuario con este correo y contraseña. \nPor favor verifica o crea una cuenta. ", style: TextStyle(fontSize: size.width * 0.028 ,fontWeight: FontWeight.w800)),
+                                ],
+                              ),
+                            );
+                          }
+                      );
+                    } else if (error.code == 'email-already-in-use') {
+                      showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              content: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: <Widget>[
+                                  Text("El correo ingresado ya esta vinculado\nen otra cuenta. Por favor usa otro correo. ", style: TextStyle(fontSize: size.width * 0.028, fontWeight: FontWeight.w800)),
                                 ],
                               ),
                             );
@@ -145,7 +204,7 @@ class Registro extends StatelessWidget {
                               content: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: <Widget>[
-                                  Text("El correo proporcionado no es correcto. \nPor favor verifica los datos. ", style: TextStyle(fontWeight: FontWeight.w800)),
+                                  Text("El correo proporcionado no es correcto. \nPor favor verifica los datos. ", style: TextStyle(fontSize: size.width * 0.028, fontWeight: FontWeight.w800)),
                                 ],
                               ),
                             );
@@ -159,7 +218,7 @@ class Registro extends StatelessWidget {
                               content: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: <Widget>[
-                                  Text("La contraseña ingresado no coincide con el correo proporcionado. \nPor favor verifica o crea una cuenta. ", style: TextStyle(fontWeight: FontWeight.w800)),
+                                  Text("La contraseña ingresado no coincide con el correo proporcionado. \nPor favor verifica o crea una cuenta. ", style: TextStyle(fontSize: size.width * 0.02, fontWeight: FontWeight.w800)),
                                 ],
                               ),
                             );
