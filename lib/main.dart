@@ -20,6 +20,8 @@ import 'Pantallas/bienvenida_page.dart';
 import 'constantes.dart';
 import 'Pantallas/home_page.dart';
 
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await FlutterDownloader.initialize(debug: true);
@@ -39,6 +41,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: Constantes.titulo,
+      navigatorKey: navigatorKey,
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
@@ -114,10 +117,21 @@ class MyApp extends StatelessWidget {
                                             Provider.of<MarkerProvider>(context, listen: false).setusertokenGoogleDrive = snapshot.data!["usertokenGoogleDrive"];
                                             cloudServicios.isConectadoGoogleDrive = true;
                                           }
+                                          if (snapshot.data!["useroneDrivetoken"] == "") {
+                                            Provider.of<MarkerProvider>(context, listen: false).setisConnectedMicrosoft = false;
+                                            cloudServicios.isConectadoDropbox = false;
+                                          } else {
+                                            Provider.of<MarkerProvider>(context, listen: false).setisConnectedMicrosoft = true;
+                                            Provider.of<MarkerProvider>(context, listen: false).setusertokenOneDrive = snapshot.data!["useroneDrivetoken"];
+                                            cloudServicios.isConectadoDropbox = true;
+                                          }
                                           if (user!.providerData[0].providerId == "microsoft.com") {
                                             return InicioSesion();
                                           }
                                         }
+
+                                        Provider.of<MarkerProvider>(context, listen: false).setnombreuser = user!.displayName!;
+                                        Provider.of<MarkerProvider>(context, listen: false).setphotouser = user!.photoURL!;
 
                                         return MainPage();
                                       }

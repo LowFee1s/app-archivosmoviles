@@ -13,6 +13,8 @@ class MarkerProvider with ChangeNotifier {
   bool _filtrotipo = false;
 
   bool _botonmostrar = false;
+  String? _nombreuser = "";
+  String? _photouser = "";
 
   bool _isConnectedGoogleDriveFirebase = false;
   bool _isConnectedMicrosoftFirebase = false;
@@ -57,6 +59,8 @@ class MarkerProvider with ChangeNotifier {
   String? get usertipoDriveFile => _usertipoDriveFile;
   String? get usertokenGoogleDrive => _usertokenGoogleDrive;
 
+  String? get nombreuser => _nombreuser;
+  String? get photouser => _photouser;
   String? get filtroaplicado => _filtroaplicado;
 
   set filtroChecar(bool valor) {
@@ -91,6 +95,16 @@ class MarkerProvider with ChangeNotifier {
 
   set setmoveAllCloudFile(bool valor) {
     _moveAllCloudFile = valor;
+    notifyListeners();
+  }
+
+  set setnombreuser(String valor) {
+    _nombreuser = valor;
+    notifyListeners();
+  }
+
+  set setphotouser(String valor) {
+    _photouser = valor;
     notifyListeners();
   }
 

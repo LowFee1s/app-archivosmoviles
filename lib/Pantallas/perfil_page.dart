@@ -1,10 +1,17 @@
+import 'dart:io';
+
+import 'package:another_flushbar/flushbar.dart';
 import 'package:appmovilesproyecto17/Firebase/firebase_authuser.dart';
 import 'package:appmovilesproyecto17/Navegacion/MarkerProvider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -19,6 +26,9 @@ class SettingPage extends StatefulWidget {
 class _SettingPageState extends State<SettingPage> {
 
   User? user = FirebaseAuth.instance.currentUser;
+
+  TextEditingController usuarioname = TextEditingController();
+  XFile? _imageFile;
   CloudServicios cloudServicios = CloudServicios();
 
   void initState() {
@@ -30,12 +40,39 @@ class _SettingPageState extends State<SettingPage> {
   @override
   Widget build(BuildContext context) {
     var isConectadoOneDrive = Provider.of<MarkerProvider>(context).tokenOneDrive;
-    var isConnectedGoogleDriveFirebase = Provider.of<MarkerProvider>(context).isConnectedGoogleDriveFirebase;
-    var isConnectedMicrosoftFirebase = Provider.of<MarkerProvider>(context).isConnectedMicrosoftFirebase;
+    var isConnectedGoogleDriveFirebase = user!.providerData[0].providerId == "google.com";
+    var isConnectedMicrosoftFirebase = user!.providerData[0].providerId == "microsoft.com";
+    var nombreuser = Provider.of<MarkerProvider>(context).nombreuser;
+    var photouser = Provider.of<MarkerProvider>(context).photouser;
     var isConnectedGoogleDrive = Provider.of<MarkerProvider>(context).isConnectedGoogleDrive;
     var isConnectedMicrosoft = Provider.of<MarkerProvider>(context).isConnectedMicrosoft;
 
     double screenwidth = MediaQuery.of(context).size.width;
+
+
+    Future<void> pickImageFromGallery() async {
+      final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+      if (pickedFile != null) {
+        setState(() {
+          _imageFile = pickedFile;
+        });
+        // Actualiza el estado de tu aplicación si es necesario
+        print("Se selecciono una imagen. ");
+      } else {
+        print('No se seleccionó ninguna imagen.');
+      }
+    }
+
+    Future<String> uploadImageAndGetURL() async {
+      if (_imageFile != null) {
+        final ref = FirebaseStorage.instance.ref().child('user_images').child('${FirebaseAuth.instance.currentUser!.uid}.png');
+        await ref.putFile(File(_imageFile!.path));
+        return await ref.getDownloadURL();
+      } else {
+        throw Exception('No se seleccionó ninguna imagen.');
+      }
+    }
+
 
     return LayoutBuilder(
       builder: (context, constrains) {
@@ -107,20 +144,24 @@ class _SettingPageState extends State<SettingPage> {
                       Column(
                         mainAxisAlignment: MainAxisAlignment.start,
                         children: [
-                          Text(
-                            user!.displayName!,
-                            style: TextStyle(
-                              fontSize: screenwidth * 0.05,
-                              color: Colors.white,
-                            ),
-                          ),
-                          SizedBox(height: 10,),
-                          Text(
-                            user!.email!,
-                            style: TextStyle(
-                              fontSize: screenwidth * 0.04,
-                              color: Colors.white,
-                            ),
+                          Column(
+                            children: [
+                              Text(
+                               user!.displayName!,
+                                style: TextStyle(
+                                  fontSize: screenwidth * 0.05,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              SizedBox(height: 10,),
+                              Text(
+                                user!.email!,
+                                style: TextStyle(
+                                  fontSize: screenwidth * 0.04,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -332,21 +373,56 @@ class _SettingPageState extends State<SettingPage> {
 
                                                               });
                                                               Navigator.of(context).pop();
+                                                              if (userGoogleDrive != null) {
+                                                                Flushbar(
+                                                                  titleText: Text("Sesion cerrada correctamente", style: TextStyle(fontSize: MediaQuery.of(context).size.width * 0.04, color: Colors.white)),
+                                                                  messageText: Text("Se quito la cuenta de Google correctamente. ", style: TextStyle(fontSize: MediaQuery.of(context).size.width * 0.031, color: Colors.white)),
+                                                                  duration: Duration(seconds: 5),
+                                                                  backgroundColor: Colors.red,
+                                                                  borderRadius: BorderRadius.circular(21),
+                                                                  maxWidth: MediaQuery.of(context).size.width * 1,
+                                                                  flushbarPosition: FlushbarPosition.TOP,
+                                                                  dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+                                                                  shouldIconPulse: false,
+                                                                  margin: EdgeInsets.fromLTRB(14, 0, 14, 0),
+                                                                  padding: EdgeInsets.all(21),
+                                                                  icon: Icon(Icons.close, color: Colors.white),
+                                                                )..show(context);
+                                                              }
                                                             }
                                                             : () async {
                                                               FirebaseAuthUsuario firebase = FirebaseAuthUsuario();
                                                               var usertGoogleDrive = await firebase.signAccountConnectWithGoogle();
                                                               var datouser = await FirebaseFirestore.instance.collection("users").doc(user!.uid).get();
-                                                              if (usertGoogleDrive != null) {
+
+                                                              if (datouser != null) {
                                                                 Provider.of<MarkerProvider>(context, listen: false).setisConnectedGoogleDrive = true;
-                                                                if (datouser != null) {
-                                                                  Provider.of<MarkerProvider>(context, listen: false).setusertokenGoogleDrive = datouser['usertokenGoogleDrive'];
-                                                                }
+                                                                Provider.of<MarkerProvider>(context, listen: false).setusertokenGoogleDrive = datouser['usertokenGoogleDrive'];
                                                               }
+
                                                               setState(() {
 
                                                               });
                                                               Navigator.of(context).pop();
+
+                                                              if (datouser != null) {
+
+                                                                Flushbar(
+                                                                  titleText: Text("Inicio de sesion correctamente", style: TextStyle(fontSize: MediaQuery.of(context).size.width * 0.04, color: Colors.white)),
+                                                                  messageText: Text("Se conecto la cuenta de Google correctamente. ", style: TextStyle(fontSize: MediaQuery.of(context).size.width * 0.031, color: Colors.white)),
+                                                                  duration: Duration(seconds: 5),
+                                                                  backgroundColor: Colors.green,
+                                                                  borderRadius: BorderRadius.circular(21),
+                                                                  maxWidth: MediaQuery.of(context).size.width * 1,
+                                                                  flushbarPosition: FlushbarPosition.TOP,
+                                                                  dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+                                                                  shouldIconPulse: false,
+                                                                  margin: EdgeInsets.fromLTRB(14, 0, 14, 0),
+                                                                  padding: EdgeInsets.all(21),
+                                                                  icon: Icon(FontAwesomeIcons.check, color: Colors.white),
+                                                                )..show(context);
+
+                                                              }
                                                             },
                                                       ),
                                                     ),
@@ -410,12 +486,12 @@ class _SettingPageState extends State<SettingPage> {
                                                   .end,
                                               children: [
                                                 Icon(
-                                                  isConnectedMicrosoftFirebase || isConnectedMicrosoft
+                                                  isConnectedMicrosoftFirebase ||  Provider.of<MarkerProvider>(context).isConnectedMicrosoft
                                                       ? FontAwesomeIcons
                                                       .checkCircle
                                                       : FontAwesomeIcons
                                                       .timesCircle,
-                                                  color: isConnectedMicrosoftFirebase || isConnectedMicrosoft
+                                                  color: isConnectedMicrosoftFirebase ||  Provider.of<MarkerProvider>(context).isConnectedMicrosoft
                                                       ? Colors.green
                                                       : Colors.red,
                                                 ),
@@ -425,36 +501,76 @@ class _SettingPageState extends State<SettingPage> {
                                                   itemBuilder: (context) =>
                                                   [
                                                     PopupMenuItem(
-                                                      child: ListTile(
-                                                        leading: Icon(
-                                                            isConnectedMicrosoftFirebase ? Icons.logout
-                                                            : isConnectedMicrosoft
-                                                                ? Icons.logout
-                                                                : Icons.login,
-                                                            color: isConnectedMicrosoftFirebase ? Colors.grey : isConnectedMicrosoft
-                                                                ? Colors.red
-                                                                : Colors.black),
-                                                        title: Text(
-                                                            isConnectedMicrosoftFirebase ? "Quitar cuenta"
-                                                            : isConnectedMicrosoft
+                                                      child: ElevatedButton(
+                                                        style: ButtonStyle(
+                                                          backgroundColor: MaterialStatePropertyAll(Colors.transparent),
+                                                          foregroundColor: MaterialStatePropertyAll(Colors.transparent),
+                                                          elevation: MaterialStatePropertyAll(0),
+                                                        ),
+                                                        child: Row(
+                                                          children: [
+                                                            Icon(
+                                                              isConnectedMicrosoftFirebase ? Icons.logout
+                                                              :   Provider.of<MarkerProvider>(context).isConnectedMicrosoft
+                                                                  ? Icons.logout
+                                                                  : Icons.login,
+                                                              color: isConnectedMicrosoftFirebase ? Colors.grey :   Provider.of<MarkerProvider>(context).isConnectedMicrosoft
+                                                                  ? Colors.red
+                                                                  : Colors.black),
+                                                            SizedBox(width: MediaQuery.of(context).size.width * 0.02),
+                                                            Text(
+                                                              isConnectedMicrosoftFirebase ? "Quitar cuenta"
+                                                            :   Provider.of<MarkerProvider>(context).isConnectedMicrosoft
                                                                 ? "Quitar cuenta"
                                                                 : "Agregar cuenta",
                                                             style: isConnectedMicrosoftFirebase ? TextStyle(color: Colors.grey)
-                                                            : isConnectedMicrosoft
+                                                            :  Provider.of<MarkerProvider>(context).isConnectedMicrosoft
                                                                 ? TextStyle(
                                                                 color: Colors
                                                                     .black)
                                                                 : TextStyle(
                                                                 color: Colors
-                                                                    .black)),
-                                                        onTap: isConnectedMicrosoftFirebase ? null : isConectadoOneDrive
-                                                            ? () {
-                                                              cloudServicios.disconnectOneDrive(context);
-                                                              Navigator.pop(context);
+                                                                    .black)),]),
+                                                        onPressed: isConnectedMicrosoftFirebase ? null :  Provider.of<MarkerProvider>(context).isConnectedMicrosoft
+                                                            ? () async {
+                                                                FirebaseAuthUsuario firebase = FirebaseAuthUsuario();
+                                                                var userOneDrive = await firebase.signOutConectionWithMicrosoft();
+                                                                if (userOneDrive != null){
+                                                                  Provider.of<MarkerProvider>(context, listen: false).setisConnectedMicrosoft = false;
+                                                                  Provider.of<MarkerProvider>(context, listen: false).setusertokenOneDrive = "";
+                                                                }
+                                                                setState(() {
+
+                                                                });
+                                                                Navigator.of(context).pop();
+                                                                if (userOneDrive != null) {
+                                                                  Flushbar(
+                                                                    titleText: Text("Sesion cerrada correctamente", style: TextStyle(fontSize: MediaQuery.of(context).size.width * 0.04, color: Colors.white)),
+                                                                    messageText: Text("Se quito la cuenta de microsoft correctamente. ", style: TextStyle(fontSize: MediaQuery.of(context).size.width * 0.031, color: Colors.white)),
+                                                                    duration: Duration(seconds: 5),
+                                                                    backgroundColor: Colors.red,
+                                                                    borderRadius: BorderRadius.circular(21),
+                                                                    maxWidth: MediaQuery.of(context).size.width * 1,
+                                                                    flushbarPosition: FlushbarPosition.TOP,
+                                                                    dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+                                                                    shouldIconPulse: false,
+                                                                    margin: EdgeInsets.fromLTRB(14, 0, 14, 0),
+                                                                    padding: EdgeInsets.all(21),
+                                                                    icon: Icon(Icons.close, color: Colors.white),
+                                                                  )..show(context);
+                                                                }
                                                             }
                                                             : () {
-                                                              cloudServicios.connectOneDrive(context);
-                                                              Navigator.pop(context);
+                                                                //await firebase.startAuthorization();
+                                                                Navigator.of(context).pop();
+
+                                                                showCupertinoModalPopup(
+                                                                    context: context,
+                                                                    builder: (BuildContext context) {
+                                                                      return dialogdato();
+                                                                    }
+                                                                );
+
                                                             },
                                                       ),
                                                     ),
@@ -517,6 +633,135 @@ class _SettingPageState extends State<SettingPage> {
           ),
         );
       }
+    );
+  }
+}
+
+class dialogdato extends StatefulWidget {
+  @override
+  _dialogdato createState() => _dialogdato();
+}
+class _dialogdato extends State<dialogdato> {
+
+  TextEditingController username = TextEditingController();
+  bool isloading = false;
+  TextEditingController password = TextEditingController();
+
+
+  String? validateEmail(String? value) {
+    const pattern = r'(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)';
+    final regex = RegExp(pattern);
+    return (!regex.hasMatch(value!)) ? 'Ingrese un correo electrónico válido' : null;
+  }
+
+
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Inicio de sesion"),
+      ),
+      body: Container(
+          child: Padding(
+            padding: const EdgeInsets.all(21.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Image.network("https://pngimg.com/uploads/microsoft/microsoft_PNG10.png", height: 30,),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.02,),
+                Text("Bienvenido!, Inicia sesion", style: TextStyle(fontSize: MediaQuery.of(context).size.width * 0.04) ),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.02,),
+                Text("*Ingresa tu cuenta institucional, personal o empresarial para hacer la conexion*", textAlign: TextAlign.center, style: TextStyle(fontSize: MediaQuery.of(context).size.width * 0.03, color: Colors.grey) ),
+
+                TextFormField(
+                  decoration: InputDecoration(
+                    labelText: 'Ingresa tu correo',
+                  ),
+                  controller: username,
+                  validator: validateEmail,
+                  onChanged: (value) {
+                    // Guarda el email en alguna variable
+                    setState(() {
+                      username.text = value;
+                    });
+                  },
+                ),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.02),
+                TextFormField(
+                  decoration: InputDecoration(
+                    labelText: 'Contraseña',
+                  ),
+                  controller: password,
+                  obscureText: true,
+                  onChanged: (value) {
+                    // Guarda la contraseña en alguna variable
+                    setState((){
+                      password.text = value;
+                    });
+                },
+                ),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.04),
+                ElevatedButton(
+                    onPressed: username.text.isNotEmpty && password.text.isNotEmpty ? () async {
+                      setState(() {
+                        isloading = true;
+                      });
+                      // Aquí puedes usar las variables del email y la contraseña\
+                      FirebaseAuthUsuario firebase = FirebaseAuthUsuario();
+                      User? user = FirebaseAuth.instance.currentUser;
+                      var usertOneDrive = username.text != "" && password.text != "" ? await firebase.signInConectionWithMicrosoft(username.text, password.text) : null;
+
+                      var datouser = await FirebaseFirestore.instance.collection("users").doc(user!.uid).get();
+                      if (usertOneDrive != null) {
+                        username.text = "";
+                        password.text = "";
+
+                        Navigator.of(context).pop();
+                        Provider.of<MarkerProvider>(context, listen: false).setisConnectedMicrosoft = true;
+                        Provider.of<MarkerProvider>(context, listen: false).setusertokenOneDrive = datouser['useroneDrivetoken'];
+
+                        Flushbar(
+                          titleText: Text("Inicio de sesion correctamente", style: TextStyle(fontSize: MediaQuery.of(context).size.width * 0.04, color: Colors.white)),
+                          messageText: Text("Se conecto la cuenta de microsoft correctamente. ", style: TextStyle(fontSize: MediaQuery.of(context).size.width * 0.031, color: Colors.white)),
+                          duration: Duration(seconds: 5),
+                          backgroundColor: Colors.green,
+                          borderRadius: BorderRadius.circular(21),
+                          maxWidth: MediaQuery.of(context).size.width * 1,
+                          flushbarPosition: FlushbarPosition.TOP,
+                          dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+                          shouldIconPulse: false,
+                          margin: EdgeInsets.fromLTRB(14, 0, 14, 0),
+                          padding: EdgeInsets.all(21),
+                          icon: Icon(FontAwesomeIcons.check, color: Colors.white),
+                        )..show(context);
+
+                      } else {
+                        showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                scrollable: true,
+                                content: Column(
+                                  children: [
+                                    Icon(Icons.error, color: Colors.red, size: 70),
+                                    Text(textAlign: TextAlign.center, style: TextStyle(fontSize: MediaQuery.of(context).size.width * 0.03, fontWeight: FontWeight.w700), "No se encontro ninguna cuenta con los datos ingresados. Favor de verificar los datos e intentar de nuevo. "),
+                                  ],
+                                ),
+                              );
+                            }
+                        );
+                      }
+                      setState(() {
+                        isloading = false;
+                      });
+                    } : null,
+                    child: isloading ? CircularProgressIndicator() : Text("Iniciar sesion")
+                ),
+              ],
+            ),
+          ),
+      ),
     );
   }
 }
