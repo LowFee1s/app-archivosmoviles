@@ -3,6 +3,8 @@ import 'dart:math';
 import 'package:another_flushbar/flushbar.dart';
 import 'package:appmovilesproyecto17/Navegacion/MarkerProvider.dart';
 import 'package:appmovilesproyecto17/Pantallas/archivoscreen_botonagregar.dart';
+import 'package:appmovilesproyecto17/Pantallas/archivoscreen_botonmover.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -12,7 +14,6 @@ import 'package:provider/provider.dart';
 import '../Apis/cloud_servicios.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-import '../Navegacion/Menubar.dart';
 
 class FilesPage extends StatefulWidget {
   FilesPage({Key? key}) : super(key: key);
@@ -24,25 +25,67 @@ class FilesPage extends StatefulWidget {
 class _FilesPageState extends State<FilesPage> {
   // Supongamos que estos son los archivos obtenidos de los servicios
   List<Map<String, Object?>> driveFiles = [];
-  List<String> dropboxFiles = ['Archivo 4', 'Archivo 5'];
-  List<String> oneDriveFiles = [];
+  List<Map<String, Object?>> allcloudFiles = [];
+  List<Map<String, Object?>> oneDriveFiles = [];
+  List<Map<String, Object?>> allFiles = [];
   String? _filterService;
   String? _filterfecha11;
   String? _filterName;
   String? _chosenValue;
   final TextEditingController controllerinput11 = TextEditingController();
   final TextEditingController dateController11 = TextEditingController();
+  User? userprovider = FirebaseAuth.instance.currentUser;
   String? _inputValue11;
+  var isConnectedGoogleDrive;
+  var isConnectedOneDrive;
+  var isConnectedOneDriveFirebase;
+  var usertokenGoogleDrive;
+  var onedriveFiles1;
+  bool isloading = false;
+  var allcloudFiles1;
+  var usertokenOneDrive;
+  var isConnectedGoogleDriveFirebase;
+
   String? _inputValue;
   Timer? _timer;
   int? _selectedRow;
   CloudServicios servicios = new CloudServicios();
 
   void _updateArchivos() async {
-    var driveFiles1 = await servicios.getGoogleDriveFiles();
-    var onedriveFiles1 = await servicios.getFilesOnedrive(Provider.of<MarkerProvider>(context, listen: false).tokenonedrivestring ?? "");
+    var driveFiles1;
+    if (isConnectedGoogleDriveFirebase) {
+      driveFiles1 = await servicios.getGoogleDriveFiles("");
+    }
+
+    if (isConnectedGoogleDrive) {
+      driveFiles1 = await servicios.getGoogleDriveFiles(usertokenGoogleDrive);
+    }
+    if (FirebaseAuth.instance.currentUser != null) {
+      allcloudFiles1 = await servicios.getAllcloudFiles(FirebaseAuth.instance.currentUser!.uid);
+    }
+    if (isConnectedOneDriveFirebase || isConnectedOneDrive) {
+      onedriveFiles1 = await servicios.getFilesOnedrive(usertokenOneDrive);
+    }
     setState(() {
-      driveFiles = driveFiles1;
+      if (isConnectedGoogleDriveFirebase || isConnectedGoogleDrive) {
+        driveFiles = driveFiles1;
+      }
+      if (FirebaseAuth.instance.currentUser != null) {
+        allcloudFiles = allcloudFiles1;
+      }
+      if (isConnectedOneDriveFirebase || isConnectedOneDrive) {
+        oneDriveFiles = onedriveFiles1;
+      }
+      if ((isConnectedGoogleDriveFirebase || isConnectedGoogleDrive) && (FirebaseAuth.instance.currentUser != null) && (isConnectedOneDriveFirebase || isConnectedOneDrive)) {
+        allFiles = []..addAll(driveFiles1)..addAll(onedriveFiles1)..addAll(allcloudFiles1);
+      } else if ((isConnectedOneDriveFirebase || isConnectedOneDrive) && (FirebaseAuth.instance.currentUser != null)) {
+        allFiles = []..addAll(onedriveFiles1)..addAll(allcloudFiles1);
+      } else if ((isConnectedGoogleDriveFirebase || isConnectedGoogleDrive) && (FirebaseAuth.instance.currentUser != null)) {
+        allFiles = []..addAll(driveFiles1)..addAll(allcloudFiles1);
+      } else if (FirebaseAuth.instance.currentUser != null) {
+        allFiles = []..addAll(allcloudFiles1);
+      }
+      allFiles.sort((a, b)=>DateTime.parse(b['fecha'].toString()).compareTo(DateTime.parse(a['fecha'].toString())));
      // oneDriveFiles = onedriveFiles1;
       _filterData(_filterService, _filterfecha11, _filterName);
     });
@@ -57,22 +100,26 @@ class _FilesPageState extends State<FilesPage> {
   @override
   void initState() {
     super.initState();
+    isConnectedGoogleDriveFirebase = userprovider!.providerData[0].providerId == "google.com";
+    isConnectedOneDriveFirebase = userprovider!.providerData[0].providerId == "microsoft.com";
     _updateArchivos();
     _startPolling();
   }
 
   void _showFilterSheet() {
 
-    if (_chosenValue == null && _inputValue11 == null && _inputValue == null) {
+    if (_chosenValue == "" && _inputValue11 == null && _inputValue == null) {
       controllerinput11.text = "";
-      _chosenValue = null;
+      Provider.of<MarkerProvider>(context, listen: false).settipoDriveFile = "";
       dateController11.text = "";
     }
 
   showModalBottomSheet(
+    isScrollControlled: true,
     context: context,
     builder: (BuildContext context) {
       return Container(
+        height: MediaQuery.of(context).size.height/1.5 + 100,
         child: Column(
           children: <Widget>[
             Padding(
@@ -99,8 +146,8 @@ class _FilesPageState extends State<FilesPage> {
                 Text("Servicio: ", style: TextStyle(fontWeight: FontWeight.w500, fontSize: MediaQuery.of(context).size.width * 0.04)),
                 Container(
                   child: DropdownButton<String>(
-                    value: _chosenValue,
-                    items: <String>['Google Drive', 'OneDrive']
+                    value: context.watch<MarkerProvider>().usertipoDriveFile,
+                    items: <String>['Todos', 'Google Drive', 'AllCloud', 'OneDrive']
                         .map<DropdownMenuItem<String>>((String value) {
                       return DropdownMenuItem<String>(
                         value: value,
@@ -110,7 +157,7 @@ class _FilesPageState extends State<FilesPage> {
                     hint: Text("Selecciona un servicio"),
                     onChanged: (String? value) {
                       setState(() {
-                        _chosenValue = value;
+                        Provider.of<MarkerProvider>(context, listen: false).settipoDriveFile = value!;
                       });
                     },
                   ),
@@ -179,11 +226,11 @@ class _FilesPageState extends State<FilesPage> {
             SizedBox(height: MediaQuery.of(context).size.height * 0.01),
             ElevatedButton(
               child: Text('Filtrar'),
-              onPressed: () {
+              onPressed: (context.watch<MarkerProvider>().usertipoDriveFile != "Todos" && context.watch<MarkerProvider>().usertipoDriveFile != "") || (_inputValue11 != null && _inputValue11 != "") || (_inputValue != null && _inputValue != "") ? () {
                 Navigator.pop(context);
                 print("Filtrando: $_chosenValue, ${_inputValue11 != "" ? _inputValue11 : "null"}, ${_inputValue != "" ? _inputValue : "null"}");
-                _filterData(_chosenValue, _inputValue11, _inputValue);
-              } ,
+                _filterData(_chosenValue == "Todos" ? null : _chosenValue, _inputValue11, _inputValue);
+              } : null ,
             ),
             SizedBox(height: MediaQuery.of(context).size.height * 0.05),
           ],
@@ -237,15 +284,15 @@ class _FilesPageState extends State<FilesPage> {
 
   if (service != null && service.isNotEmpty) {
     // Filtrar por servicio
-    driveFiles = driveFiles.where((file) => file['servicio'] == service).toList();
+    allFiles = allFiles.where((file) => file['servicio'] == service).toList();
   }
   if (fechaarchivo11 != null && fechaarchivo11.isNotEmpty) {
     // Filtrar por fecha
-    driveFiles = driveFiles.where((file) => DateFormat("yyyy:MM:dd").format(DateTime.parse(file['fecha'].toString())) == fechaarchivo11.toString()).toList();
+    allFiles = allFiles.where((file) => DateFormat("yyyy:MM:dd").format(DateTime.parse(file['fecha'].toString())) == fechaarchivo11.toString()).toList();
   }
   if (name != null && name.isNotEmpty) {
     // Filtrar por nombre
-    driveFiles = driveFiles.where((file) => (file['nombre'] as String).toLowerCase().contains(name.toLowerCase())).toList();
+    allFiles = allFiles.where((file) => (file['nombre'] as String).toLowerCase().contains(name.toLowerCase())).toList();
   }
   setState(() {});
 }
@@ -258,6 +305,12 @@ class _FilesPageState extends State<FilesPage> {
 
   @override
   Widget build(BuildContext context) {
+
+    isConnectedGoogleDrive = Provider.of<MarkerProvider>(context).isConnectedGoogleDrive;
+    isConnectedOneDrive = Provider.of<MarkerProvider>(context).isConnectedMicrosoft;
+    _chosenValue = context.watch<MarkerProvider>().usertipoDriveFile;
+    usertokenGoogleDrive = Provider.of<MarkerProvider>(context).usertokenGoogleDrive;
+    usertokenOneDrive = Provider.of<MarkerProvider>(context).usertokenOneDrive;
 
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
@@ -290,7 +343,7 @@ class _FilesPageState extends State<FilesPage> {
               Column(
                 children: [
                   Expanded(
-                    child: driveFiles.isEmpty ?
+                    child: allFiles.isEmpty ?
                     Center(child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -318,17 +371,17 @@ class _FilesPageState extends State<FilesPage> {
                             label: Text('Fecha'),
                           ),
                         ],
-                        rows: driveFiles
+                        rows: allFiles
                             .asMap()
                             .entries
                             .map((file) => _crearFila(
                                 file.key, file.value['servicio'].toString(),
-                                FaIcon(FontAwesomeIcons.googleDrive),
+                                file.value['servicio'] == "Google Drive" ? FaIcon(FontAwesomeIcons.googleDrive) : file.value['servicio'] == "AllCloud" ? FaIcon(FontAwesomeIcons.cloud) : FaIcon(FontAwesomeIcons.microsoft),
                                 file.value['nombre'].toString(), file.value['id'].toString(), file.value['screenarchivo'].toString(), file.value['size'].toString(),
                                 file.value['extension'].toString(),
                                 DateFormat('yyyy:MM:dd - kk:mm').format(
                                     DateTime.parse(file.value['fecha'].toString()))))
-                            .toList()
+                            .toList(),
                         // ..addAll(dropboxFiles.map((file) => _crearFila(FaIcon(FontAwesomeIcons.dropbox), file)))
                         // ..addAll(oneDriveFiles.map((file) => _crearFila(FaIcon(FontAwesomeIcons.cloud), file))),
                         ),
@@ -360,13 +413,16 @@ class _FilesPageState extends State<FilesPage> {
                                   _inputValue11 = null;
                                   _inputValue = null;
                                   _chosenValue = null;
+                                  controllerinput11.text = "";
+                                  dateController11.text = "";
                                   _filterfecha11 = null;
                                   _filterService = null;
+                                  Provider.of<MarkerProvider>(context, listen: false).settipoDriveFile = "Todos";
                                   _updateArchivos();
                                 },
                                 child: Icon(Icons.arrow_back_rounded, color: Colors.deepPurpleAccent, size: 25),
                               ),
-                              Text(textAlign: TextAlign.center, "Total de archivos filtrados:\n ${driveFiles.length}", style: TextStyle(fontWeight: FontWeight.w800, fontSize: fontSize)),
+                              Text(textAlign: TextAlign.center, "Total de archivos filtrados:\n ${allFiles.length}", style: TextStyle(fontWeight: FontWeight.w800, fontSize: fontSize)),
                             ],
                           ),
                           SizedBox(height: MediaQuery.of(context).size.height * 0.017),
@@ -706,6 +762,45 @@ class _FilesPageState extends State<FilesPage> {
       )..show(context);
     }
 
+    void showTopSnackBar117(BuildContext context, String message, Color color) {
+      Flushbar(
+        titleText: Text("Archivo movido", style: TextStyle(fontSize: MediaQuery.of(context).size.width * 0.04, color: Colors.white)),
+        messageText: Text(message, style: TextStyle(fontSize: MediaQuery.of(context).size.width * 0.031, color: Colors.white)),
+        duration: Duration(seconds: 5),
+        backgroundColor: color,
+        borderRadius: BorderRadius.circular(21),
+        maxWidth: MediaQuery.of(context).size.width * 1,
+        flushbarPosition: FlushbarPosition.TOP,
+        dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+        shouldIconPulse: false,
+        margin: EdgeInsets.fromLTRB(14, 0, 14, 0),
+        padding: EdgeInsets.all(21),
+        icon: Icon(FontAwesomeIcons.fileExport, color: Colors.white),
+      )..show(context);
+    }
+
+    void showTopSnackBar114(BuildContext context, String message, Color color) {
+      Flushbar(
+        titleText: Text("Archivo compartido", style: TextStyle(fontSize: MediaQuery.of(context).size.width * 0.04, color: Colors.white)),
+        messageText: Text(message, style: TextStyle(fontSize: MediaQuery.of(context).size.width * 0.031, color: Colors.white)),
+        duration: Duration(seconds: 5),
+        backgroundColor: color,
+        borderRadius: BorderRadius.circular(21),
+        maxWidth: MediaQuery.of(context).size.width * 1,
+        flushbarPosition: FlushbarPosition.TOP,
+        dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+        shouldIconPulse: false,
+        margin: EdgeInsets.fromLTRB(14, 0, 14, 0),
+        padding: EdgeInsets.all(21),
+        icon: Icon(FontAwesomeIcons.share, color: Colors.white),
+      )..show(context);
+    }
+
+
+    bool uploadtoGoogleDrive = Provider.of<MarkerProvider>(context).moveGoogleDriveFile;
+    bool uploadtoOneDrive = Provider.of<MarkerProvider>(context).moveOneDriveFile;
+    bool uploadToDropbox = Provider.of<MarkerProvider>(context).moveAllCloudFile;
+
     return DataRow(
       color: MaterialStateProperty.resolveWith<Color?>(
           (Set<MaterialState> states) {
@@ -724,7 +819,7 @@ class _FilesPageState extends State<FilesPage> {
                 context: context,
                 builder: (context) {
                   return Padding(
-                    padding: const EdgeInsets.fromLTRB(0, 100, 0, 0),
+                    padding: const EdgeInsets.fromLTRB(0, 70, 0, 0),
                     child: Container(
                         height: MediaQuery.of(context).size.height,
                         width: MediaQuery.of(context).size.width,
@@ -783,7 +878,7 @@ class _FilesPageState extends State<FilesPage> {
                                           Text(textAlign: TextAlign.center, file, style: TextStyle(fontWeight: FontWeight.w800)),
                                           SizedBox(height: MediaQuery.of(context).size.height * 0.02),
                                           Padding(
-                                            padding: const EdgeInsets.all(18.0),
+                                            padding: const EdgeInsets.all(17.0),
                                             child: Row(
                                               mainAxisAlignment:
                                                   MainAxisAlignment.spaceAround,
@@ -816,7 +911,17 @@ class _FilesPageState extends State<FilesPage> {
                                               ],
                                             ),
                                           ),
-                                          SizedBox(height: MediaQuery.of(context).size.height * 0.02),
+                                          ElevatedButton(
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: Colors.deepPurpleAccent,
+                                              ),
+                                              onPressed: () async {
+                                                await servicios.shareFile(context, nombrealmacenamiento, id, file, FirebaseAuth.instance.currentUser!, usertokenOneDrive, usertokenGoogleDrive).then((value) {
+                                                });
+                                              },
+                                              child: isloading ? Center(child: CircularProgressIndicator()) : Icon(Icons.share, color: Colors.white, size: 21)
+                                          ),
+                                          SizedBox(height: MediaQuery.of(context).size.height * 0.01),
                                           Row(
                                             mainAxisAlignment: MainAxisAlignment.spaceAround,
                                             children: [
@@ -825,10 +930,10 @@ class _FilesPageState extends State<FilesPage> {
                                                 child: Column(
                                                   mainAxisAlignment: MainAxisAlignment.start,
                                                   children: [
-                                                    Text("Previsualizacion del archivo: ${thumblink == "null" ? "No" : "Si"}",
+                                                    Text("Previsualizacion del archivo: ${thumblink == "null" || nombrealmacenamiento == "AllCloud" ? "No" : "Si"}",
                                                         style:
                                                         TextStyle(fontWeight: FontWeight.w800)),
-                                                    thumblink == "null" ? Container()
+                                                    thumblink == "null" || nombrealmacenamiento == "AllCloud" ? Container()
                                                     : Container(
                                                           padding: EdgeInsets.all(10),
                                                           decoration: BoxDecoration(
@@ -872,19 +977,44 @@ class _FilesPageState extends State<FilesPage> {
                                                                   children: [
                                                                     ElevatedButton(
                                                                         style: ElevatedButton.styleFrom(
+                                                                          backgroundColor: Colors.orange,
+                                                                          shape: CircleBorder(),
+                                                                          padding: EdgeInsets.all(21),
+                                                                        ),
+                                                                        onPressed: () {
+                                                                         var movefileuser11 = showDialog(
+                                                                              context: context,
+                                                                              builder: (context) {
+                                                                                return MoverButton(nombrealmacenamiento: nombrealmacenamiento, idfile: id, file: file);
+                                                                              }
+                                                                          );
+                                                                         movefileuser11.then((value) {
+                                                                           if (value) {
+                                                                             showTopSnackBar117(context, "Se movio el archivo correctamente: ${file}", Colors.orange);
+                                                                           }
+                                                                         });
+                                                                        },
+                                                                        child: Icon(FontAwesomeIcons.fileExport, color: Colors.white, size: 21)
+                                                                    ),
+                                                                    const SizedBox(height: 20),
+                                                                    ElevatedButton(
+                                                                        style: ElevatedButton.styleFrom(
                                                                           backgroundColor: Colors.lightBlue,
                                                                           shape: CircleBorder(),
                                                                           padding: EdgeInsets.all(21),
                                                                         ),
                                                                         onPressed: () {
                                                                           // descargar
-                                                                          servicios.downloadFiletoGoogleDrive(id);
+                                                                          nombrealmacenamiento == "Google Drive" ?
+                                                                          servicios.downloadFiletoGoogleDrive(usertokenGoogleDrive, id)
+                                                                          : nombrealmacenamiento == "AllCloud" ?
+                                                                          servicios.downloadFileFromAllCloud(FirebaseAuth.instance.currentUser!.uid, file) :  servicios.downloadFileFromOneDrive(usertokenOneDrive, id);
                                                                           Navigator.of(context).pop();
                                                                           showTopSnackBar17(context, "Se descargo el archivo correctamente: ${file}", Colors.blue);
                                                                         },
                                                                         child: Icon(FontAwesomeIcons.download, color: Colors.white, size: 21)
                                                                     ),
-                                                                    const SizedBox(height: 40),
+                                                                    const SizedBox(height: 20),
                                                                     ElevatedButton(
                                                                         style: ElevatedButton.styleFrom(
                                                                           backgroundColor: Colors.red,
@@ -908,7 +1038,9 @@ class _FilesPageState extends State<FilesPage> {
                                                                                     TextButton(
                                                                                         onPressed: () {
                                                                                           // Borrar
-                                                                                          servicios.deleteGoogleDriveFile(id);
+                                                                                          nombrealmacenamiento == "Google Drive" ?
+                                                                                          servicios.deleteGoogleDriveFile(id, usertokenGoogleDrive) : nombrealmacenamiento == "AllCloud"
+                                                                                          ? servicios.deletetoAllCloudFile(FirebaseAuth.instance.currentUser!.uid, file) : servicios.deletetoOneDriveFile(id, usertokenOneDrive);
                                                                                           Navigator.of(context).pop();
                                                                                           Navigator.of(context).pop();
                                                                                           showTopSnackBar(context, "Se borro el archivo correctamente: ${file}", Colors.red);
@@ -933,8 +1065,10 @@ class _FilesPageState extends State<FilesPage> {
                                         ],
                                       ),
                                   ),
-                                  SizedBox(height: MediaQuery.of(context).size.height * 0.05),
+                                  SizedBox(height: MediaQuery.of(context).size.height * 0.02),
                                   Center(child: Text("Subido en: ${nombrealmacenamiento}", style: TextStyle(fontWeight: FontWeight.w500, color: Colors.grey))),
+                                  SizedBox(height: MediaQuery.of(context).size.height * 0.01),
+                                  Center(child: Icon(color: Colors.grey, nombrealmacenamiento == "Google Drive" ? FontAwesomeIcons.googleDrive : nombrealmacenamiento == "AllCloud" ? FontAwesomeIcons.cloud : FontAwesomeIcons.microsoft)),
                                 ],
                               ),
                             ),
@@ -955,6 +1089,67 @@ class _FilesPageState extends State<FilesPage> {
             child: Text(limitarTexto(file, 25), overflow: TextOverflow.fade))),
         DataCell(Text(fecha)),
       ],
+    );
+  }
+}
+
+class MiModalBottomSheet extends StatefulWidget {
+  @override
+  _MiModalBottomSheetState createState() => _MiModalBottomSheetState();
+}
+
+class _MiModalBottomSheetState extends State<MiModalBottomSheet> {
+  String? _chosenValue;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      child: Column(
+        children: <Widget>[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(17, 21, 17, 21),
+            child: Container(
+              height: 10,
+              width: 210,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.black,
+                ),
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: Container(),
+              ),
+            ),
+          ),
+          Text("Filtrar por servicio, fecha o nombre", style: TextStyle(fontWeight: FontWeight.w500, fontSize: MediaQuery.of(context).size.width * 0.05)),
+          SizedBox(height: MediaQuery.of(context).size.height * 0.01),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text("Servicio: ", style: TextStyle(fontWeight: FontWeight.w500, fontSize: MediaQuery.of(context).size.width * 0.04)),
+              Container(
+                child: DropdownButton<String>(
+                  value: _chosenValue,
+                  items: <String>['Google Drive', 'AllCloud', 'OneDrive']
+                      .map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                  hint: Text("Selecciona un servicio"),
+                  onChanged: (String? value) {
+                    setState(() {
+                      _chosenValue = value;
+                    });
+                  },
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
