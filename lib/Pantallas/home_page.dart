@@ -117,7 +117,7 @@ class _HomePageState extends State<HomePage> {
                                   fontSize: screenWidth * 0.05,
                                 )),
                             TextSpan(
-                                text: " ${user!.displayName!}" ?? "",
+                                text: " ${user!.displayName}" ?? "",
                                 style: TextStyle(
                                     color: Constantes.kcDarkBlueColor,
                                     fontWeight: FontWeight.bold,
@@ -300,9 +300,8 @@ class _HomePageState extends State<HomePage> {
                                   mainAxisAlignment: MainAxisAlignment.end,
                                   children: [
                                     Icon(
-
-                                      Provider.of<MarkerProvider>(context).isConnectedGoogleDriveFirebase || Provider.of<MarkerProvider>(context).isConnectedGoogleDrive ? FontAwesomeIcons.checkCircle : FontAwesomeIcons.timesCircle,
-                                      color: Provider.of<MarkerProvider>(context).isConnectedGoogleDriveFirebase || Provider.of<MarkerProvider>(context).isConnectedGoogleDrive ? Colors.green : Colors.red,
+                                      isConnectedGoogleDriveFirebase || Provider.of<MarkerProvider>(context).isConnectedGoogleDrive ? FontAwesomeIcons.checkCircle : FontAwesomeIcons.timesCircle,
+                                      color: isConnectedGoogleDriveFirebase || Provider.of<MarkerProvider>(context).isConnectedGoogleDrive ? Colors.green : Colors.red,
                                     ),
                                     //IconButton(onPressed: () {}, icon: Icon(Icons.more_vert, color: Colors.grey)),
                                   ],
@@ -357,8 +356,8 @@ class _HomePageState extends State<HomePage> {
                                   mainAxisAlignment: MainAxisAlignment.end,
                                   children: [
                                     Icon(
-                                      Provider.of<MarkerProvider>(context).isConnectedMicrosoftFirebase || Provider.of<MarkerProvider>(context).isConnectedMicrosoft ? FontAwesomeIcons.checkCircle : FontAwesomeIcons.timesCircle,
-                                      color: Provider.of<MarkerProvider>(context).isConnectedMicrosoftFirebase || Provider.of<MarkerProvider>(context).isConnectedMicrosoft ? Colors.green : Colors.red,
+                                      isConnectedMicrosoftFirebase || Provider.of<MarkerProvider>(context).isConnectedMicrosoft ? FontAwesomeIcons.checkCircle : FontAwesomeIcons.timesCircle,
+                                      color:isConnectedMicrosoftFirebase || Provider.of<MarkerProvider>(context).isConnectedMicrosoft ? Colors.green : Colors.red,
                                     ),
                                     //IconButton(onPressed: () {}, icon: Icon(Icons.more_vert, color: Colors.grey)),
                                   ],
