@@ -82,6 +82,7 @@ class InicioSesion extends StatelessWidget {
               width: size.width * 0.8,
               child: TextFormField(
                 controller: passwordcontroller,
+                obscureText: true,
                 decoration: InputDecoration(
                   labelText: "Contraseña",
                   contentPadding:
@@ -140,7 +141,7 @@ class InicioSesion extends StatelessWidget {
                               content: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: <Widget>[
-                                  Text("No se encontro ningun usuario con este correo y contraseña. \nPor favor verifica o crea una cuenta. ", style: TextStyle(fontWeight: FontWeight.w800)),
+                                  Text("No se encontro ningun usuario con este correo y contraseña. \nPor favor verifica o crea una cuenta. ", style: TextStyle(fontSize: size.width * 0.028, fontWeight: FontWeight.w800)),
                                 ],
                               ),
                             );
@@ -154,7 +155,7 @@ class InicioSesion extends StatelessWidget {
                               content: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: <Widget>[
-                                  Text("El correo proporcionado no es correcto. \nPor favor verifica los datos. ", style: TextStyle(fontWeight: FontWeight.w800)),
+                                  Text("El correo proporcionado no es correcto. \nPor favor verifica los datos. ", style: TextStyle(fontSize: size.width * 0.028, fontWeight: FontWeight.w800)),
                                 ],
                               ),
                             );
@@ -168,7 +169,7 @@ class InicioSesion extends StatelessWidget {
                               content: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: <Widget>[
-                                  Text("La contraseña ingresado no coincide con el correo proporcionado. \nPor favor verifica los datos. ", style: TextStyle(fontWeight: FontWeight.w800)),
+                                  Text("La contraseña ingresado no coincide con el correo proporcionado. \nPor favor verifica los datos. ", style: TextStyle(fontSize: size.width * 0.028, fontWeight: FontWeight.w800)),
                                 ],
                               ),
                             );
@@ -182,7 +183,7 @@ class InicioSesion extends StatelessWidget {
                               content: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: <Widget>[
-                                  Text("Los datos no coinciden con algun usuario. \nPor favor verifica los datos. ", style: TextStyle(fontWeight: FontWeight.w800)),
+                                  Text("Los datos no coinciden con algun usuario. \nPor favor verifica los datos. ", style: TextStyle(fontSize: size.width * 0.02, fontWeight: FontWeight.w800)),
                                 ],
                               ),
                             );
@@ -371,6 +372,8 @@ class _GoogleSignInState extends State<GoogleSignIn> {
           FirebaseAuthUsuario firebasedato = new FirebaseAuthUsuario();
           try {
             await firebasedato.signInWithGoogle();
+            Provider.of<MarkerProvider>(context, listen: false).setisConnectedGoogleDrive = false;
+            Provider.of<MarkerProvider>(context, listen: false).setisConnectedGoogleDriveFirebase = true;
             Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => MainPage()), (route) => false);
           } catch(e){
             if(e is FirebaseAuthException){
