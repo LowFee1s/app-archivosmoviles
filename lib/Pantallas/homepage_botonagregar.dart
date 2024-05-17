@@ -99,13 +99,13 @@ class _AgregarButtonHomeState extends State<AgregarButtonHome> {
 
   @override
   Widget build(BuildContext context) {
-    servicios.isConectadoOneDrive = Provider.of<MarkerProvider>(context).tokenOneDrive;
-    var isConnectedGoogleDrive = Provider.of<MarkerProvider>(context).isConnectedGoogleDrive;
-    var usertokenGoogleDrive = Provider.of<MarkerProvider>(context).usertokenGoogleDrive;
-    var usertokenOneDrive = Provider.of<MarkerProvider>(context).usertokenOneDrive;
-    var isConnectedGoogleDriveFirebase = Provider.of<MarkerProvider>(context).isConnectedGoogleDriveFirebase;
-    var isConnectedMicrosoftFirebase = Provider.of<MarkerProvider>(context).isConnectedMicrosoftFirebase;
-    var isConnectedMicrosoft = Provider.of<MarkerProvider>(context).isConnectedMicrosoft;
+    servicios.isConectadoOneDrive = Provider.of<MarkerProvider>(context, listen: false).tokenOneDrive;
+    var isConnectedGoogleDrive = Provider.of<MarkerProvider>(context, listen: false).isConnectedGoogleDrive;
+    var usertokenGoogleDrive = Provider.of<MarkerProvider>(context, listen: false).usertokenGoogleDrive;
+    var usertokenOneDrive = Provider.of<MarkerProvider>(context, listen: false).usertokenOneDrive;
+    var isConnectedGoogleDriveFirebase = Provider.of<MarkerProvider>(context, listen: false).isConnectedGoogleDriveFirebase;
+    var isConnectedMicrosoftFirebase = Provider.of<MarkerProvider>(context, listen: false).isConnectedMicrosoftFirebase;
+    var isConnectedMicrosoft = Provider.of<MarkerProvider>(context, listen: false).isConnectedMicrosoft;
 
 
     double screenwidth = MediaQuery.of(context).size.width;
