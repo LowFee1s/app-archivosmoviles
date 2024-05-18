@@ -11,6 +11,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../Apis/cloud_servicios.dart';
 import '../constantes.dart';
 
 class InicioSesion extends StatelessWidget {
@@ -111,7 +112,7 @@ class InicioSesion extends StatelessWidget {
                     if (credenciales != null) {
 
                       User? user = FirebaseAuth.instance.currentUser;
-
+                      CloudServicios cloudServicios = CloudServicios();
                       var datouser = await FirebaseFirestore.instance
                           .collection("users")
                           .doc(user!.uid)
@@ -120,6 +121,21 @@ class InicioSesion extends StatelessWidget {
                       if (datouser['usertokenGoogleDrive'] != "") {
                         Provider.of<MarkerProvider>(context, listen: false).setusertokenGoogleDrive = datouser['usertokenGoogleDrive'];
                         Provider.of<MarkerProvider>(context, listen: false).setisConnectedGoogleDrive = true;
+                        cloudServicios.isConectadoGoogleDrive = true;
+                      } else {
+                        Provider.of<MarkerProvider>(context, listen: false).setusertokenGoogleDrive = "";
+                        Provider.of<MarkerProvider>(context, listen: false).setisConnectedGoogleDrive = false;
+                        cloudServicios.isConectadoGoogleDrive = false;
+                      }
+
+                      if (datouser['useroneDrivetoken'] != "") {
+                        Provider.of<MarkerProvider>(context, listen: false).setusertokenOneDrive = datouser['useroneDrivetoken'];
+                        Provider.of<MarkerProvider>(context, listen: false).setisConnectedMicrosoft = true;
+                        cloudServicios.isConectadoOneDrive = true;
+                      } else {
+                        Provider.of<MarkerProvider>(context, listen: false).setusertokenOneDrive = "";
+                        Provider.of<MarkerProvider>(context, listen: false).setisConnectedMicrosoft = false;
+                        cloudServicios.isConectadoOneDrive = false;
                       }
 
                       var usernameaccount = FirebaseAuth.instance.currentUser;
@@ -284,7 +300,7 @@ class _MicrosoftInState extends State<MicrosoftSignIn> {
           try {
             var usermicrosoft = await firebasedato.signInwithMicrosoft();
             User? user = FirebaseAuth.instance.currentUser;
-
+            CloudServicios servicios = CloudServicios();
             var datouser = await FirebaseFirestore.instance
                 .collection("users")
                 .doc(user!.uid)
@@ -293,12 +309,23 @@ class _MicrosoftInState extends State<MicrosoftSignIn> {
             if (datouser['usertokenGoogleDrive'] != "") {
               Provider.of<MarkerProvider>(context, listen: false).setusertokenGoogleDrive = datouser['usertokenGoogleDrive'];
               Provider.of<MarkerProvider>(context, listen: false).setisConnectedGoogleDrive = true;
+              Provider.of<MarkerProvider>(context, listen: false).setisConnectedGoogleDriveFirebase = false;
+              servicios.isConectadoGoogleDrive = true;
+
+            } else {
+              Provider.of<MarkerProvider>(context, listen: false).setusertokenGoogleDrive = "";
+              Provider.of<MarkerProvider>(context, listen: false).setisConnectedGoogleDrive = false;
+              Provider.of<MarkerProvider>(context, listen: false).setisConnectedGoogleDriveFirebase = false;
+              servicios.isConectadoGoogleDrive = false;
+
             }
 
             if (usermicrosoft != null && usermicrosoft != "") {
 
               var usernameaccount = FirebaseAuth.instance.currentUser!.photoURL;
               Provider.of<MarkerProvider>(context, listen: false).setusertokenOneDrive = usermicrosoft;
+              Provider.of<MarkerProvider>(context, listen: false).setisConnectedMicrosoft = false;
+              Provider.of<MarkerProvider>(context, listen: false).setisConnectedMicrosoftFirebase = true;
 
               if (usernameaccount != null && usernameaccount != "") {
                 Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => MainPage()), (route) => false);
@@ -372,8 +399,32 @@ class _GoogleSignInState extends State<GoogleSignIn> {
           FirebaseAuthUsuario firebasedato = new FirebaseAuthUsuario();
           try {
             await firebasedato.signInWithGoogle();
+
+            User? user = FirebaseAuth.instance.currentUser;
+            CloudServicios servicios = CloudServicios();
+            var datouser = await FirebaseFirestore.instance
+                .collection("users")
+                .doc(user!.uid)
+                .get();
+
+            if (datouser['useroneDrivetoken'] != "") {
+              Provider.of<MarkerProvider>(context, listen: false).setusertokenOneDrive = datouser['useroneDrivetoken'];
+              Provider.of<MarkerProvider>(context, listen: false).setisConnectedMicrosoft = true;
+              Provider.of<MarkerProvider>(context, listen: false).setisConnectedMicrosoftFirebase = false;
+              servicios.isConectadoOneDrive = true;
+
+            } else {
+              Provider.of<MarkerProvider>(context, listen: false).setusertokenOneDrive = "";
+              Provider.of<MarkerProvider>(context, listen: false).setisConnectedMicrosoft = false;
+              Provider.of<MarkerProvider>(context, listen: false).setisConnectedMicrosoftFirebase = false;
+              servicios.isConectadoOneDrive = false;
+
+            }
+
+
             Provider.of<MarkerProvider>(context, listen: false).setisConnectedGoogleDrive = false;
             Provider.of<MarkerProvider>(context, listen: false).setisConnectedGoogleDriveFirebase = true;
+
             Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => MainPage()), (route) => false);
           } catch(e){
             if(e is FirebaseAuthException){
