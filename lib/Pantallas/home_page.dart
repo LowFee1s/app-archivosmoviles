@@ -46,19 +46,19 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     cloudServicios.isConectadoOneDrive;
-
   }
 
   @override
   Widget build(BuildContext context) {
 
 
-    var isConectadoOneDrive = Provider.of<MarkerProvider>(context).tokenOneDrive;
-    var isConnectedGoogleDriveFirebase = Provider.of<MarkerProvider>(context).setisConnectedGoogleDriveFirebase = user!.providerData[0].providerId == "google.com";
-    var isConnectedMicrosoftFirebase = Provider.of<MarkerProvider>(context).setisConnectedMicrosoftFirebase = user!.providerData[0].providerId == "microsoft.com";
-    var isConnectedGoogleDrive = Provider.of<MarkerProvider>(context).isConnectedGoogleDrive;
-    var isConnectedMicrosoft = Provider.of<MarkerProvider>(context).isConnectedMicrosoft;
+    final isConectadoOneDrive = Provider.of<MarkerProvider>(context).tokenOneDrive;
+    final isConnectedGoogleDriveFirebase = Provider.of<MarkerProvider>(context).setisConnectedGoogleDriveFirebase = user!.providerData[0].providerId == "google.com";
+    final isConnectedMicrosoftFirebase = Provider.of<MarkerProvider>(context).setisConnectedMicrosoftFirebase = user!.providerData[0].providerId == "microsoft.com";
+    final isConnectedGoogleDrive = Provider.of<MarkerProvider>(context).isConnectedGoogleDrive;
+    final isConnectedMicrosoft = Provider.of<MarkerProvider>(context).isConnectedMicrosoft;
     double screenWidth = MediaQuery.of(context).size.width;
+
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
@@ -301,8 +301,8 @@ class _HomePageState extends State<HomePage> {
                                   children: [
                                     Icon(
 
-                                      Provider.of<MarkerProvider>(context).isConnectedGoogleDriveFirebase || Provider.of<MarkerProvider>(context).isConnectedGoogleDrive ? FontAwesomeIcons.checkCircle : FontAwesomeIcons.timesCircle,
-                                      color: Provider.of<MarkerProvider>(context).isConnectedGoogleDriveFirebase || Provider.of<MarkerProvider>(context).isConnectedGoogleDrive ? Colors.green : Colors.red,
+                                      Provider.of<MarkerProvider>(context).isConnectedGoogleDriveFirebase || isConnectedGoogleDrive || cloudServicios.isConectadoGoogleDrive || Provider.of<MarkerProvider>(context).isConnectedGoogleDrive ? FontAwesomeIcons.checkCircle : FontAwesomeIcons.timesCircle,
+                                      color: Provider.of<MarkerProvider>(context).isConnectedGoogleDriveFirebase || isConnectedGoogleDrive || cloudServicios.isConectadoGoogleDrive || Provider.of<MarkerProvider>(context).isConnectedGoogleDrive ? Colors.green : Colors.red,
                                     ),
                                     //IconButton(onPressed: () {}, icon: Icon(Icons.more_vert, color: Colors.grey)),
                                   ],
@@ -357,8 +357,8 @@ class _HomePageState extends State<HomePage> {
                                   mainAxisAlignment: MainAxisAlignment.end,
                                   children: [
                                     Icon(
-                                      Provider.of<MarkerProvider>(context).isConnectedMicrosoftFirebase || Provider.of<MarkerProvider>(context).isConnectedMicrosoft ? FontAwesomeIcons.checkCircle : FontAwesomeIcons.timesCircle,
-                                      color: Provider.of<MarkerProvider>(context).isConnectedMicrosoftFirebase || Provider.of<MarkerProvider>(context).isConnectedMicrosoft ? Colors.green : Colors.red,
+                                      Provider.of<MarkerProvider>(context).isConnectedMicrosoftFirebase || isConnectedMicrosoft || cloudServicios.isConectadoOneDrive || Provider.of<MarkerProvider>(context).isConnectedMicrosoft ? FontAwesomeIcons.checkCircle : FontAwesomeIcons.timesCircle,
+                                      color: Provider.of<MarkerProvider>(context).isConnectedMicrosoftFirebase || isConnectedMicrosoft || cloudServicios.isConectadoOneDrive ||  Provider.of<MarkerProvider>(context).isConnectedMicrosoft ? Colors.green : Colors.red,
                                     ),
                                     //IconButton(onPressed: () {}, icon: Icon(Icons.more_vert, color: Colors.grey)),
                                   ],

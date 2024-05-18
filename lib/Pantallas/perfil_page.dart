@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:another_flushbar/flushbar.dart';
 import 'package:appmovilesproyecto17/Firebase/firebase_authuser.dart';
 import 'package:appmovilesproyecto17/Navegacion/MarkerProvider.dart';
+import 'package:appmovilesproyecto17/Pantallas/inicio_sesion.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -33,19 +34,20 @@ class _SettingPageState extends State<SettingPage> {
 
   void initState() {
     super.initState();
-    cloudServicios.isConectadoGoogleDrive = user!.providerData[0].providerId == "google.com";
+    cloudServicios.isConectadoGoogleDrive;
     cloudServicios.isConectadoOneDrive;
   }
 
   @override
   Widget build(BuildContext context) {
-    var isConectadoOneDrive = Provider.of<MarkerProvider>(context).tokenOneDrive;
-    var isConnectedGoogleDriveFirebase = user!.providerData[0].providerId == "google.com";
-    var isConnectedMicrosoftFirebase = user!.providerData[0].providerId == "microsoft.com";
+    final isConectadoOneDrive = Provider.of<MarkerProvider>(context).tokenOneDrive;
+    final isConnectedGoogleDriveFirebase = user!.providerData[0].providerId == "google.com";
+    final isConnectedMicrosoftFirebase = user!.providerData[0].providerId == "microsoft.com";
     var nombreuser = Provider.of<MarkerProvider>(context).nombreuser;
     var photouser = Provider.of<MarkerProvider>(context).photouser;
-    var isConnectedGoogleDrive = Provider.of<MarkerProvider>(context).isConnectedGoogleDrive;
-    var isConnectedMicrosoft = Provider.of<MarkerProvider>(context).isConnectedMicrosoft;
+    final provider = Provider.of<MarkerProvider>(context, listen: false);
+    final isConnectedGoogleDrive = Provider.of<MarkerProvider>(context).isConnectedGoogleDrive;
+    final isConnectedMicrosoft = Provider.of<MarkerProvider>(context).isConnectedMicrosoft;
 
     double screenwidth = MediaQuery.of(context).size.width;
 
@@ -107,8 +109,7 @@ class _SettingPageState extends State<SettingPage> {
                                   Provider.of<MarkerProvider>(context, listen: false).setisConnectedMicrosoftFirebase = false;
                                   Provider.of<MarkerProvider>(context, listen: false).setisConnectedMicrosoft = false;
 
-                                  Navigator.pushReplacementNamed(
-                                      context, Constantes.InicioSesionNavegacion);
+                                  Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => InicioSesion()), (route) => false);
                                 },
                                 child: Text("Confirmar"),
                             ),
@@ -365,12 +366,12 @@ class _SettingPageState extends State<SettingPage> {
                                                             ? () async {
                                                               FirebaseAuthUsuario firebase = FirebaseAuthUsuario();
                                                               var userGoogleDrive = await firebase.signOutAccount1ConnectWithGoogle();
-                                                              if (userGoogleDrive != null){
-                                                                Provider.of<MarkerProvider>(context, listen: false).setisConnectedGoogleDrive = false;
-                                                                Provider.of<MarkerProvider>(context, listen: false).setusertokenGoogleDrive = "";
-                                                              }
-                                                              setState(() {
 
+                                                              provider.setisConnectedGoogleDrive = false;
+                                                              provider.setusertokenGoogleDrive = "";
+
+                                                              setState(() {
+                                                                cloudServicios.isConectadoGoogleDrive = false;
                                                               });
                                                               Navigator.of(context).pop();
                                                               if (userGoogleDrive != null) {
@@ -395,16 +396,16 @@ class _SettingPageState extends State<SettingPage> {
                                                               var usertGoogleDrive = await firebase.signAccountConnectWithGoogle();
                                                               var datouser = await FirebaseFirestore.instance.collection("users").doc(user!.uid).get();
 
-                                                              if (datouser != null) {
-                                                                Provider.of<MarkerProvider>(context, listen: false).setisConnectedGoogleDrive = true;
-                                                                Provider.of<MarkerProvider>(context, listen: false).setusertokenGoogleDrive = datouser['usertokenGoogleDrive'];
-                                                              }
 
-                                                              setState(() {
+                                                              provider.setisConnectedGoogleDrive = true;
+                                                              provider.setisConnectedGoogleDriveFirebase = false;
+                                                              provider.setusertokenGoogleDrive = datouser['usertokenGoogleDrive'];
 
-                                                              });
                                                               Navigator.of(context).pop();
 
+                                                              setState(() {
+                                                                cloudServicios.isConectadoGoogleDrive = true;
+                                                              });
                                                               if (datouser != null) {
 
                                                                 Flushbar(
@@ -511,36 +512,36 @@ class _SettingPageState extends State<SettingPage> {
                                                           children: [
                                                             Icon(
                                                               isConnectedMicrosoftFirebase ? Icons.logout
-                                                              :   Provider.of<MarkerProvider>(context).isConnectedMicrosoft
+                                                              :   (isConnectedMicrosoft || cloudServicios.isConectadoOneDrive)
                                                                   ? Icons.logout
                                                                   : Icons.login,
-                                                              color: isConnectedMicrosoftFirebase ? Colors.grey :   Provider.of<MarkerProvider>(context).isConnectedMicrosoft
+                                                              color: isConnectedMicrosoftFirebase ? Colors.grey :   (isConnectedMicrosoft || cloudServicios.isConectadoOneDrive)
                                                                   ? Colors.red
                                                                   : Colors.black),
                                                             SizedBox(width: MediaQuery.of(context).size.width * 0.02),
                                                             Text(
                                                               isConnectedMicrosoftFirebase ? "Quitar cuenta"
-                                                            :   Provider.of<MarkerProvider>(context).isConnectedMicrosoft
+                                                            :   (isConnectedMicrosoft || cloudServicios.isConectadoOneDrive)
                                                                 ? "Quitar cuenta"
                                                                 : "Agregar cuenta",
                                                             style: isConnectedMicrosoftFirebase ? TextStyle(color: Colors.grey)
-                                                            :  Provider.of<MarkerProvider>(context).isConnectedMicrosoft
+                                                            :  (isConnectedMicrosoft || cloudServicios.isConectadoOneDrive)
                                                                 ? TextStyle(
                                                                 color: Colors
                                                                     .black)
                                                                 : TextStyle(
                                                                 color: Colors
                                                                     .black)),]),
-                                                        onPressed: isConnectedMicrosoftFirebase ? null :  Provider.of<MarkerProvider>(context).isConnectedMicrosoft
+                                                        onPressed: isConnectedMicrosoftFirebase ? null :  (isConnectedMicrosoft || cloudServicios.isConectadoOneDrive)
                                                             ? () async {
                                                                 FirebaseAuthUsuario firebase = FirebaseAuthUsuario();
                                                                 var userOneDrive = await firebase.signOutConectionWithMicrosoft();
-                                                                if (userOneDrive != null){
-                                                                  Provider.of<MarkerProvider>(context, listen: false).setisConnectedMicrosoft = false;
-                                                                  Provider.of<MarkerProvider>(context, listen: false).setusertokenOneDrive = "";
-                                                                }
-                                                                setState(() {
 
+                                                                provider.setisConnectedMicrosoft = false;
+                                                                provider.setusertokenOneDrive = "";
+
+                                                                setState(() {
+                                                                  cloudServicios.isConectadoOneDrive = false;
                                                                 });
                                                                 Navigator.of(context).pop();
                                                                 if (userOneDrive != null) {
@@ -567,7 +568,7 @@ class _SettingPageState extends State<SettingPage> {
                                                                 showCupertinoModalPopup(
                                                                     context: context,
                                                                     builder: (BuildContext context) {
-                                                                      return dialogdato();
+                                                                      return dialogdato(isConnectedMicrosoft: isConnectedMicrosoft);
                                                                     }
                                                                 );
 
@@ -638,6 +639,10 @@ class _SettingPageState extends State<SettingPage> {
 }
 
 class dialogdato extends StatefulWidget {
+  var isConnectedMicrosoft;
+
+  dialogdato({required this.isConnectedMicrosoft});
+
   @override
   _dialogdato createState() => _dialogdato();
 }
@@ -711,7 +716,7 @@ class _dialogdato extends State<dialogdato> {
                       FirebaseAuthUsuario firebase = FirebaseAuthUsuario();
                       User? user = FirebaseAuth.instance.currentUser;
                       var usertOneDrive = username.text != "" && password.text != "" ? await firebase.signInConectionWithMicrosoft(username.text, password.text) : null;
-
+                      CloudServicios servicios = CloudServicios();
                       var datouser = await FirebaseFirestore.instance.collection("users").doc(user!.uid).get();
                       if (usertOneDrive != null) {
                         username.text = "";
@@ -719,8 +724,13 @@ class _dialogdato extends State<dialogdato> {
 
                         Navigator.of(context).pop();
                         Provider.of<MarkerProvider>(context, listen: false).setisConnectedMicrosoft = true;
-                        Provider.of<MarkerProvider>(context, listen: false).setusertokenOneDrive = datouser['useroneDrivetoken'];
 
+                        Provider.of<MarkerProvider>(context, listen: false).setisConnectedMicrosoftFirebase = false;
+                        Provider.of<MarkerProvider>(context, listen: false).setusertokenOneDrive = datouser['useroneDrivetoken'];
+                        setState(() {
+                          servicios.isConectadoOneDrive = true;
+                          widget.isConnectedMicrosoft = true;
+                        });
                         Flushbar(
                           titleText: Text("Inicio de sesion correctamente", style: TextStyle(fontSize: MediaQuery.of(context).size.width * 0.04, color: Colors.white)),
                           messageText: Text("Se conecto la cuenta de microsoft correctamente. ", style: TextStyle(fontSize: MediaQuery.of(context).size.width * 0.031, color: Colors.white)),

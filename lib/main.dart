@@ -119,11 +119,11 @@ class MyApp extends StatelessWidget {
                                           }
                                           if (snapshot.data!["useroneDrivetoken"] == "") {
                                             Provider.of<MarkerProvider>(context, listen: false).setisConnectedMicrosoft = false;
-                                            cloudServicios.isConectadoDropbox = false;
+                                            cloudServicios.isConectadoOneDrive = false;
                                           } else {
                                             Provider.of<MarkerProvider>(context, listen: false).setisConnectedMicrosoft = true;
                                             Provider.of<MarkerProvider>(context, listen: false).setusertokenOneDrive = snapshot.data!["useroneDrivetoken"];
-                                            cloudServicios.isConectadoDropbox = true;
+                                            cloudServicios.isConectadoOneDrive = true;
                                           }
                                           if (user!.providerData[0].providerId == "microsoft.com") {
                                             return InicioSesion();
@@ -211,15 +211,19 @@ class _MainPageState extends State<MainPage> {
     super.initState();
     _children = [
       FilesPage(),
-      HomePage(onTabTapped: onTabTapped),
+      HomePage(key: ValueKey(_currentIndex), onTabTapped: onTabTapped),
       SettingPage(),
-      // Agrega todas las pantallas que necesites
     ];
   }
 
   void onTabTapped(int index) {
     setState(() {
       _currentIndex = index;
+      _children = [
+        FilesPage(),
+        HomePage(key: ValueKey(_currentIndex), onTabTapped: onTabTapped),
+        SettingPage(),
+      ];
     });
   }
 
