@@ -4,6 +4,9 @@ class MarkerProvider with ChangeNotifier {
   bool _tokenonedrive = false;
   String? _usertokenOneDrive = "";
   String? _usertokenGoogleDrive = "";
+  bool _isloadingloginapp = false;
+  bool _isloadingregisterapp = false;
+  bool _isloadingshare = false;
 
   String? _filtroaplicado;
   String? _filtroaplicadorealizado;
@@ -35,6 +38,9 @@ class MarkerProvider with ChangeNotifier {
   bool _botoncamiones = false;
 
   bool get botonmostrar => _botonmostrar;
+  bool get isloadingloginapp => _isloadingloginapp;
+  bool get isloadingregisterapp => _isloadingregisterapp;
+  bool get isloadingshare => _isloadingshare;
 
   bool get isConnectedGoogleDriveFirebase => _isConnectedGoogleDriveFirebase;
   bool get isConnectedMicrosoftFirebase => _isConnectedMicrosoftFirebase;
@@ -80,6 +86,21 @@ class MarkerProvider with ChangeNotifier {
 
   set setmoveGoogleDriveFile(bool valor) {
     _moveGoogleDriveFile = valor;
+    notifyListeners();
+  }
+
+  set setisloadingloginapp(bool valor) {
+    _isloadingloginapp = valor;
+    notifyListeners();
+  }
+
+  set setisloadingregisterapp(bool valor) {
+    _isloadingregisterapp = valor;
+    notifyListeners();
+  }
+
+  set setisloadingshare(bool valor) {
+    _isloadingshare = valor;
     notifyListeners();
   }
 
