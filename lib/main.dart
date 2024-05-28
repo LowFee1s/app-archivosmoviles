@@ -35,6 +35,30 @@ void main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
+  void refreshAccessToken() async {
+    CloudServicios cloudServicios = CloudServicios();
+    try {
+      final GoogleSignInAccount? googleSignInAccount = await cloudServicios.google1SignIn.signInSilently();
+
+      final GoogleSignInAuthentication googleSignInAuthentication = await googleSignInAccount!.authentication;
+
+      // Actualizar el token de acceso en Firestore
+      User? user = FirebaseAuth.instance.currentUser;
+      await FirebaseFirestore.instance
+          .collection("users")
+          .doc(user!.uid)
+          .update({
+        "usertokenGoogleDrive": googleSignInAuthentication.accessToken,
+      });
+
+      print('Token de acceso actualizado correctamente');
+
+    } on FirebaseAuthException catch (error) {
+      print(error.message);
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
 
@@ -116,6 +140,7 @@ class MyApp extends StatelessWidget {
                                             Provider.of<MarkerProvider>(context, listen: false).setisConnectedGoogleDrive = true;
                                             Provider.of<MarkerProvider>(context, listen: false).setusertokenGoogleDrive = snapshot.data!["usertokenGoogleDrive"];
                                             cloudServicios.isConectadoGoogleDrive = true;
+                                            refreshAccessToken();
                                           }
                                           if (snapshot.data!["useroneDrivetoken"] == "") {
                                             Provider.of<MarkerProvider>(context, listen: false).setisConnectedMicrosoft = false;
@@ -125,15 +150,22 @@ class MyApp extends StatelessWidget {
                                             Provider.of<MarkerProvider>(context, listen: false).setusertokenOneDrive = snapshot.data!["useroneDrivetoken"];
                                             cloudServicios.isConectadoOneDrive = true;
                                           }
+                                          if (user!.providerData[0].providerId != "microsoft.com" && user!.providerData[0].providerId != "google.com") {
+                                            if (!(user!.emailVerified)) {
+                                              return InicioSesion();
+                                            }
+                                          }
                                           if (user!.providerData[0].providerId == "microsoft.com") {
                                             return InicioSesion();
                                           }
+
+                                          Provider.of<MarkerProvider>(context, listen: false).setnombreuser = user!.displayName!;
+                                          Provider.of<MarkerProvider>(context, listen: false).setphotouser = user!.photoURL!;
+
                                         }
 
-                                        Provider.of<MarkerProvider>(context, listen: false).setnombreuser = user!.displayName!;
-                                        Provider.of<MarkerProvider>(context, listen: false).setphotouser = user!.photoURL!;
-
                                         return MainPage();
+
                                       }
                                     }
                                   }
@@ -156,6 +188,22 @@ class MyApp extends StatelessWidget {
 
   Future<Map<String, dynamic>> _checarSiestaconectadoIniciadoSesion() async {
     if (FirebaseAuth.instance.currentUser != null) {
+
+      User? user = FirebaseAuth.instance.currentUser;
+
+      IdTokenResult tokenResult = await user!.getIdTokenResult();
+      DateTime expirationtoken = tokenResult.expirationTime!;
+      print(tokenResult.expirationTime);
+      DateTime dateTime = DateTime.now();
+
+      if (dateTime.isAfter(expirationtoken)) {
+        await user.getIdTokenResult(true);
+        user.reload();
+        print("El token se actualizo porque expiro del user. ");
+      } else {
+        print("El token todavia no expira del user. ");
+      }
+
       DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance.collection("users").doc(FirebaseAuth.instance.currentUser!.uid).get();
       if (!documentSnapshot.exists) {
         return {"": ""};
