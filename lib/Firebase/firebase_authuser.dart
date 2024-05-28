@@ -247,7 +247,7 @@ class FirebaseAuthUsuario {
     var clientId = 'ccbefcba-c090-4c47-a300-98bd8115f1e6';
     var tenantId = 'caca9011-7b6a-44de-861f-095a2ca883b7';
     var clientSecret = 'H~D8Q~MQLJspaXKv5UDC~pWq1pbrrNKVvj~hzbOJ';
-    var scope = 'https://graph.microsoft.com/.default';
+    var scope = 'https://graph.microsoft.com/.default openid profile offline_access';
     var url = 'https://login.microsoftonline.com/$tenantId/oauth2/v2.0/token';
 
     var refreshtoken = refreshtokenmicrosoft;
@@ -258,8 +258,9 @@ class FirebaseAuthUsuario {
       body: {
         'client_id': clientId,
         'client_secret': clientSecret,
-        'grant_type': 'refresh_token',
-        'refresh_token': refreshtoken,
+        'code': refreshtoken,
+        'grant_type': 'authorization_code',
+        'scope': scope,
       },
     );
 
@@ -273,7 +274,7 @@ class FirebaseAuthUsuario {
           .collection("users")
           .doc(user!.uid)
           .update({
-        "useroneDrivetoken": jsonResponse['access_token'].toString(),
+        "useroneDrivetokenrefresh": jsonResponse['refresh_token'].toString(),
       });
 
       print('Se actualizo el token de la sesion conectada con microsoft correcto');
@@ -313,6 +314,7 @@ class FirebaseAuthUsuario {
 
   Future<String?> signInwithMicrosoft() async {
     var dato;
+    var datorefresh;
     try {
       final OAuthProvider microsoftProvider = OAuthProvider("microsoft.com");
 
@@ -332,6 +334,7 @@ class FirebaseAuthUsuario {
       User? user = FirebaseAuth.instance.currentUser;
 
       if (user != null) {
+
         var dato1 = await FirebaseFirestore.instance.collection("users").doc(user.uid).get();
         if (!dato1.exists) {
           await FirebaseFirestore.instance

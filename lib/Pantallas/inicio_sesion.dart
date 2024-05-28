@@ -104,6 +104,7 @@ class InicioSesion extends StatelessWidget {
               width: size.width * 0.8,
               child: OutlinedButton(
                 onPressed: () async {
+                  Provider.of<MarkerProvider>(context, listen: false).setisloadingloginapp = true;
                   try {
                     final credenciales = await FirebaseAuth.instance.signInWithEmailAndPassword(
                         email: correocontroller.text, password: passwordcontroller.text
@@ -139,16 +140,37 @@ class InicioSesion extends StatelessWidget {
                       }
 
                       var usernameaccount = FirebaseAuth.instance.currentUser;
+                      await usernameaccount!.reload();
 
-                      if (usernameaccount!.displayName != null && usernameaccount!.photoURL != null) {
-                        Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => MainPage()), (route) => false);
+                      if (usernameaccount!.emailVerified) {
+                        if (usernameaccount!.displayName != null && usernameaccount!.photoURL != null) {
+                          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => MainPage()), (route) => false);
+                        } else {
+                          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => Detallescuenta()), (route) => false);
+                        }
                       } else {
-                        Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => Detallescuenta()), (route) => false);
+                        showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                scrollable: true,
+                                content: Column(
+                                  children: [
+                                    Icon(Icons.info, color: Colors.blue, size: 70),
+                                    Text(textAlign: TextAlign.center, style: TextStyle(fontSize: MediaQuery.of(context).size.width * 0.028, fontWeight: FontWeight.w700), "Se ha enviado un email de verificación a\nsu correo. Favor de verificar el correo e intentar de nuevo. "),
+                                  ],
+                                ),
+                              );
+                            }
+                        );
                       }
 
                     }
+                    Provider.of<MarkerProvider>(context, listen: false).setisloadingloginapp = false;
 
                   } on FirebaseAuthException catch (error) {
+                    Provider.of<MarkerProvider>(context, listen: false).setisloadingloginapp = false;
+
                     if (error.code == 'user-not-found') {
                       showDialog(
                           context: context,
@@ -199,7 +221,7 @@ class InicioSesion extends StatelessWidget {
                               content: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: <Widget>[
-                                  Text("Los datos no coinciden con algun usuario. \nPor favor verifica los datos. ", style: TextStyle(fontSize: size.width * 0.02, fontWeight: FontWeight.w800)),
+                                  Text("Los datos no coinciden con algun usuario. \nPor favor verifica los datos. ", style: TextStyle(fontSize: size.width * 0.028, fontWeight: FontWeight.w800)),
                                 ],
                               ),
                             );
@@ -208,7 +230,7 @@ class InicioSesion extends StatelessWidget {
                     }
                   }
                 },
-                child: Text(Constantes.textInicioSesion),
+                child: Provider.of<MarkerProvider>(context).isloadingloginapp ? CircularProgressIndicator(color: Colors.white) : Text(Constantes.textInicioSesion),
                 style: ButtonStyle(
                     foregroundColor:
                     MaterialStateProperty.all<Color>(Constantes.kcPrimaryColor),

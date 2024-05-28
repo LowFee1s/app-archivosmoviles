@@ -116,6 +116,7 @@ class _Registro extends State<Registro> {
               width: size.width * 0.8,
               child: OutlinedButton(
                 onPressed: () async {
+                  Provider.of<MarkerProvider>(context, listen: false).setisloadingregisterapp = true;
                   try {
                     final credenciales = await FirebaseAuth.instance.createUserWithEmailAndPassword(
                         email: correocontroller.text, password: passwordcontroller.text
@@ -128,35 +129,37 @@ class _Registro extends State<Registro> {
                     var dialog = showDialog(
                         context: context,
                         builder: (BuildContext context) {
-                          return AlertDialog(
-                            content: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: <Widget>[
-                                Text("Se ha enviado un email de verificación a\nsu correo. Por favor, verifique su cuenta.", style: TextStyle(fontSize: size.width * 0.02, fontWeight: FontWeight.w800)),
-                              ],
+                          return WillPopScope(
+                            onWillPop: () async => false,
+                            child: AlertDialog(
+                              content: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: <Widget>[
+                                  Text("Se ha enviado un email de verificación a\nsu correo. Por favor, verifique su cuenta.", style: TextStyle(fontSize: size.width * 0.02, fontWeight: FontWeight.w800)),
+                                ],
+                              ),
                             ),
                           );
                         }
                     );
 
                     if (user != null) {
+                          await FirebaseFirestore.instance
+                              .collection("users")
+                              .doc(user!.uid)
+                              .set({
+                            "useridGoogleDrive": "",
+                            "useremailGoogleDrive": "",
+                            "usertokenGoogleDrive": "",
+                            "usertokenrefreshGoogleDrive": "",
+                            "useroneDrivetokenrefresh": "",
+                            "useroneDrivetoken": "",
+                          });
                           _timer = Timer.periodic(Duration(seconds: 10), (timer) async {
                             await user!.reload();
                             user = FirebaseAuth.instance.currentUser;
 
                             if (credenciales != null && user!.emailVerified) {
-
-                                await FirebaseFirestore.instance
-                                    .collection("users")
-                                    .doc(user!.uid)
-                                    .set({
-                                  "useridGoogleDrive": "",
-                                  "useremailGoogleDrive": "",
-                                  "usertokenGoogleDrive": "",
-                                  "usertokenrefreshGoogleDrive": "",
-                                  "useroneDrivetokenrefresh": "",
-                                  "useroneDrivetoken": "",
-                                });
 
                                 timer.cancel();
 
@@ -168,7 +171,10 @@ class _Registro extends State<Registro> {
                             });
 
                           }
+                        Provider.of<MarkerProvider>(context, listen: false).setisloadingregisterapp = false;
+
                         } on FirebaseAuthException catch (error) {
+                        Provider.of<MarkerProvider>(context, listen: false).setisloadingregisterapp = false;
                     if (error.code == 'user-not-found') {
                       showDialog(
                           context: context,
@@ -219,7 +225,7 @@ class _Registro extends State<Registro> {
                               content: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: <Widget>[
-                                  Text("La contraseña ingresado no coincide con el correo proporcionado. \nPor favor verifica o crea una cuenta. ", style: TextStyle(fontSize: size.width * 0.02, fontWeight: FontWeight.w800)),
+                                  Text("La contraseña ingresado no coincide con el correo proporcionado. \nPor favor verifica o crea una cuenta. ", style: TextStyle(fontSize: size.width * 0.028, fontWeight: FontWeight.w800)),
                                 ],
                               ),
                             );
@@ -228,7 +234,7 @@ class _Registro extends State<Registro> {
                     }
                   }
                 },
-                child: Text("Registrar"),
+                child: Provider.of<MarkerProvider>(context).isloadingregisterapp ? CircularProgressIndicator(color: Colors.white) : Text("Registrar"),
                 style: ButtonStyle(
                     foregroundColor:
                     MaterialStateProperty.all<Color>(Constantes.kcPrimaryColor),
@@ -245,8 +251,7 @@ class _Registro extends State<Registro> {
                 style: ButtonStyle(
                     foregroundColor:
                     MaterialStateProperty.all<Color>(Constantes.kcPrimaryColor),
-                    backgroundColor:
-                    MaterialStateProperty.all<Color>(Colors.grey),
+                    backgroundColor: MaterialStateProperty.all<Color>(Colors.grey),
                     side: MaterialStateProperty.all<BorderSide>(BorderSide.none)),
               ),
             ),
