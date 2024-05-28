@@ -41,11 +41,11 @@ class _FilesPageState extends State<FilesPage> {
   var isConnectedOneDriveFirebase;
   var usertokenGoogleDrive;
   var onedriveFiles1;
-  bool isloading = false;
+  var isloading = false;
   var allcloudFiles1;
   var usertokenOneDrive;
   var isConnectedGoogleDriveFirebase;
-
+  var contextapp;
   String? _inputValue;
   Timer? _timer;
   int? _selectedRow;
@@ -59,12 +59,23 @@ class _FilesPageState extends State<FilesPage> {
 
     if (isConnectedGoogleDrive) {
       driveFiles1 = await servicios.getGoogleDriveFiles(usertokenGoogleDrive);
+      if (driveFiles1 == []) {
+        Provider.of<MarkerProvider>(contextapp, listen: false).setusertokenGoogleDrive = "";
+        Provider.of<MarkerProvider>(contextapp, listen: false).setisConnectedGoogleDrive = false;
+      }
     }
     if (FirebaseAuth.instance.currentUser != null) {
       allcloudFiles1 = await servicios.getAllcloudFiles(FirebaseAuth.instance.currentUser!.uid);
     }
-    if (isConnectedOneDriveFirebase || isConnectedOneDrive) {
+    if (isConnectedOneDriveFirebase) {
       onedriveFiles1 = await servicios.getFilesOnedrive(usertokenOneDrive);
+    }
+    if (isConnectedOneDrive) {
+      onedriveFiles1 = await servicios.getFilesOnedrive(usertokenOneDrive);
+      if (onedriveFiles1 == []) {
+        Provider.of<MarkerProvider>(contextapp, listen: false).setusertokenOneDrive = "";
+        Provider.of<MarkerProvider>(contextapp, listen: false).setisConnectedMicrosoft = false;
+      }
     }
     setState(() {
       if (isConnectedGoogleDriveFirebase || isConnectedGoogleDrive) {
@@ -307,6 +318,7 @@ class _FilesPageState extends State<FilesPage> {
   Widget build(BuildContext context) {
 
     isConnectedGoogleDrive = Provider.of<MarkerProvider>(context).isConnectedGoogleDrive;
+    contextapp = context;
     isConnectedOneDrive = Provider.of<MarkerProvider>(context).isConnectedMicrosoft;
     _chosenValue = context.watch<MarkerProvider>().usertipoDriveFile;
     usertokenGoogleDrive = Provider.of<MarkerProvider>(context).usertokenGoogleDrive;
@@ -813,7 +825,7 @@ class _FilesPageState extends State<FilesPage> {
       onSelectChanged: (bool? selected) {
         setState(() {
           if (selected != null && selected) {
-            showModalBottomSheet(
+            var modal = showModalBottomSheet(
               backgroundColor: Colors.transparent,
               isScrollControlled: true,
                 context: context,
@@ -916,10 +928,16 @@ class _FilesPageState extends State<FilesPage> {
                                                 backgroundColor: Colors.deepPurpleAccent,
                                               ),
                                               onPressed: () async {
+                                                setState(() {
+                                                  Provider.of<MarkerProvider>(context, listen: false).setisloadingshare = true;
+                                                });
                                                 await servicios.shareFile(context, nombrealmacenamiento, id, file, FirebaseAuth.instance.currentUser!, usertokenOneDrive, usertokenGoogleDrive).then((value) {
                                                 });
+                                                setState(() {
+                                                  Provider.of<MarkerProvider>(context, listen: false).setisloadingshare = false;
+                                                });
                                               },
-                                              child: isloading ? Center(child: CircularProgressIndicator()) : Icon(Icons.share, color: Colors.white, size: 21)
+                                              child: Provider.of<MarkerProvider>(context).isloadingshare ? CircularProgressIndicator(color: Colors.white) : Icon(Icons.share, color: Colors.white, size: 21)
                                           ),
                                           SizedBox(height: MediaQuery.of(context).size.height * 0.01),
                                           Row(
@@ -1079,6 +1097,7 @@ class _FilesPageState extends State<FilesPage> {
                   );
                 }
             );
+            modal.then((value) => Provider.of<MarkerProvider>(context, listen: false).setisloadingshare = false);
           }
         });
       },

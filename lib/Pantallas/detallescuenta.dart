@@ -22,6 +22,7 @@ class _Detallescuentastate extends State<Detallescuenta> {
 
   final TextEditingController usuarionamecontroller = TextEditingController();
   CloudServicios cloudServicios = CloudServicios();
+  var _loading = false;
   FirebaseAuthUsuario authUsuario = FirebaseAuthUsuario();
   XFile? _imageFile;
 
@@ -131,6 +132,9 @@ class _Detallescuentastate extends State<Detallescuenta> {
               width: size.width * 0.8,
               child: OutlinedButton(
                 onPressed: () async {
+                        setState(() {
+                          _loading = true;
+                        });
                         try {
                           User? user = FirebaseAuth.instance.currentUser;
                           final userphoto = await uploadImageAndGetURL();
@@ -138,14 +142,39 @@ class _Detallescuentastate extends State<Detallescuenta> {
                             await user.updateProfile(displayName: usuarionamecontroller.text, photoURL: userphoto);
                             await user.reload();
 
-                            Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => MainPage()), (route) => false);
+                            if (user!.providerData[0].providerId == "microsoft.com" || user!.providerData[0].providerId == "google.com") {
+                              Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => MainPage()), (route) => false);
+                            }
 
+                            if (user!.providerData[0].providerId != "microsoft.com" && user!.providerData[0].providerId != "google.com") {
+                              if (user!.emailVerified) {
+                                Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => MainPage()), (route) => false);
+                              } else {
+                                showDialog(
+                                    context: context,
+                                    builder: (BuildContext context) {
+                                      return AlertDialog(
+                                        scrollable: true,
+                                        content: Column(
+                                          children: [
+                                            Icon(Icons.info, color: Colors.blue, size: 70),
+                                            Text(textAlign: TextAlign.center, style: TextStyle(fontSize: MediaQuery.of(context).size.width * 0.03, fontWeight: FontWeight.w700), "Se ha enviado un email de verificación a\nsu correo. Favor de verificar el correo e intentar de nuevo. "),
+                                          ],
+                                        ),
+                                      );
+                                    }
+                                );
+                              }
+                            }
                           }
+                          setState(() {
+                            _loading = false;
+                          });
                         } on FirebaseAuthException catch (error) {
                             print(error);
                         }
                       },
-                child: Text(Constantes.textInicioSesion),
+                child: _loading ? CircularProgressIndicator(color: Colors.white) : Text(Constantes.textInicioSesion),
                 style: ButtonStyle(
                     foregroundColor:
                     MaterialStateProperty.all<Color>(Constantes.kcPrimaryColor),
