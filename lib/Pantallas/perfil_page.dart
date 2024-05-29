@@ -102,8 +102,8 @@ class _SettingPageState extends State<SettingPage> {
                             TextButton(
                                 onPressed: () async {
                                   FirebaseAuthUsuario firebase = FirebaseAuthUsuario();
-                                  isConnectedGoogleDriveFirebase || isConnectedGoogleDrive ?
-                                  await firebase.signOutconGoogle() : isConnectedMicrosoftFirebase || isConnectedMicrosoft ? await firebase.signOutconMicrosoft() : await FirebaseAuth.instance.signOut();
+                                  isConnectedGoogleDriveFirebase ?
+                                  await firebase.signOutconGoogle() : isConnectedMicrosoftFirebase ? await firebase.signOutconMicrosoft() : await FirebaseAuth.instance.signOut();
                                   Provider.of<MarkerProvider>(context, listen: false).setisConnectedGoogleDrive = false;
                                   Provider.of<MarkerProvider>(context, listen: false).setisConnectedGoogleDriveFirebase = false;
                                   Provider.of<MarkerProvider>(context, listen: false).setisConnectedMicrosoftFirebase = false;
@@ -135,9 +135,14 @@ class _SettingPageState extends State<SettingPage> {
                         children: [
                           // user image sin circle avatar
                           Center(
-                            child: CircleAvatar(
-                              radius: 40,
-                              backgroundImage: NetworkImage(user!.photoURL!),
+                            child: TextButton(
+                              onPressed: () {
+
+                              },
+                              child: CircleAvatar(
+                                radius: 40,
+                                backgroundImage: NetworkImage(user!.photoURL!),
+                              ),
                             ),
                           ),
                         ],

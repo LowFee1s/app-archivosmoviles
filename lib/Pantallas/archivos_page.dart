@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:another_flushbar/flushbar.dart';
+import 'package:appmovilesproyecto17/Firebase/firebase_authuser.dart';
 import 'package:appmovilesproyecto17/Navegacion/MarkerProvider.dart';
 import 'package:appmovilesproyecto17/Pantallas/archivoscreen_botonagregar.dart';
 import 'package:appmovilesproyecto17/Pantallas/archivoscreen_botonmover.dart';
+import 'package:appmovilesproyecto17/Pantallas/inicio_sesion.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -55,6 +57,11 @@ class _FilesPageState extends State<FilesPage> {
     var driveFiles1;
     if (isConnectedGoogleDriveFirebase) {
       driveFiles1 = await servicios.getGoogleDriveFiles("");
+      if (driveFiles1 == []) {
+        FirebaseAuthUsuario firebaseAuthUsuario = FirebaseAuthUsuario();
+        await firebaseAuthUsuario.signOutconGoogle();
+        Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => InicioSesion()), (route) => false);
+      }
     }
 
     if (isConnectedGoogleDrive) {
