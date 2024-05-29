@@ -454,6 +454,10 @@ class _GoogleSignInState extends State<GoogleSignIn> {
           } catch(e){
             if(e is FirebaseAuthException){
               showMessage(e.message!);
+              User? user = FirebaseAuth.instance.currentUser!;
+              if (user != null) {
+                await FirebaseAuth.instance.signOut();
+              }
             }
           }
           setState(() {
