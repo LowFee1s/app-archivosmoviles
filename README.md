@@ -3,15 +3,20 @@
 Este es un proyecto realizado en flutter, que se conecta por medio de las API de cada sistema de archivos 
 y si se logea en estos puede recibir y enviar entre todos estos archivos y documentos realizado.
 
-## Getting Started
+## Elaboro la aplicacion:
 
-This project is a starting point for a Flutter application.
+El equipo 4, conformados por los integrantes:
 
-A few resources to get you started if this is your first Flutter project:
+-Ángel Alfredo González Mora  2109637 
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+-David Alejandro Garza Treviño  2007777 
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+-Emilio Nicanor Hernández  2001255 
+
+-Jonathan Aldair Martínez González  1964534 
+
+-Liam Yahir De Anda Fang  1957773 
+
+-Francisco Javier Blas Garza  1999491 
+
+Atte: El Equipo 4 :D
